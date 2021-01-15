@@ -1,0 +1,88 @@
+# goreleaser.yml
+# Release automation
+#
+# Build customization
+project_name: gopass
+
+before:
+  hooks:
+    - make clean
+    - make completion
+    - go mod download
+
+builds:
+  - id: git-credential-gopass
+    binary: git-credential-gopass
+    flags:
+      - -trimpath
+      - -tags=netgo
+    env:
+      - CGO_ENABLED=0
+    asmflags:
+      - all=-trimpath={{.Env.GOPATH}}
+    gcflags:
+      - all=-trimpath={{.Env.GOPATH}}
+    ldflags: |
+      -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.CommitDate}} -extldflags '-static'
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - openbsd
+      - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 6
+      - 7
+    mod_timestamp: '{{ .CommitTimestamp }}'
+archives:
+  - id: git-credential-gopass
+    name_template: "{{.Binary}}-{{.Version}}-{{.Os}}-{{.Arch}}{{ if .Arm }}v{{.Arm }}{{ end }}"
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - CHANGELOG.md
+      - LICENSE
+      - README.md
+
+release:
+  github:
+    owner: gopasspw
+    name: git-credential-gopass
+  draft: false
+  prerelease: auto
+
+nfpms:
+  - id: git-credential-gopass
+    vendor: Gopass Authors
+    homepage: "https://www.gopass.pw"
+    maintainer: "Gopass Authors <gopass@gopass.pw>"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    dependencies:
+      - git
+      - gnupg2
+    recommends:
+      - rng-tools
+source:
+  enabled: true
+  name_template: "{{.ProjectName}}-{{.Version}}"
+  
+checksum:
+  name_template: "{{.ProjectName}}_{{.Version}}_SHA256SUMS"
+
+milestones:
+  -
+    repo:
+      owner: gopasspw
+      name: git-credential-gopass
+    close: true
+    fail_on_error: false
+    name_template: "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
