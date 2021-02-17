@@ -70,7 +70,7 @@ $(GOPASS_OUTPUT): $(GOFILES_BUILD)
 	@$(GO) build -o $@ $(BUILDFLAGS)
 	@printf '%s\n' '$(OK)'
 
-install: all install-completion
+install: all
 	@echo -n ">> INSTALL, version = $(GOPASS_VERSION)"
 	@install -m 0755 -d $(DESTDIR)$(BINDIR)
 	@install -m 0755 $(GOPASS_OUTPUT) $(DESTDIR)$(BINDIR)/$(GOPASS_OUTPUT)
