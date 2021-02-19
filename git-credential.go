@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/tcnksm/go-gitconfig"
+
 	"github.com/gopasspw/gopass/pkg/ctxutil"
 	"github.com/gopasspw/gopass/pkg/debug"
 	"github.com/gopasspw/gopass/pkg/fsutil"
@@ -142,6 +144,13 @@ func (s *gc) Get(c *cli.Context) error {
 	cred, err := parseGitCredentials(termio.Stdin)
 	if err != nil {
 		return fmt.Errorf("error: %v while parsing git-credential", err)
+	}
+	if cred.Username == "" {
+		username, err := gitconfig.Username()
+		if err != nil {
+			return err
+		}
+		cred.Username = username
 	}
 	// try git/host/username... If username is empty, simply try git/host
 	path := "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
