@@ -171,6 +171,9 @@ gen:
 
 fmt:
 	@gofmt -s -l -w $(GOFILES_NOVENDOR)
+	@which goimports > /dev/null; if [ $$? -ne 0 ]; then \
+		$(GO) get -u golang.org/x/tools/cmd/goimports; \
+	fi
 	@goimports -l -w $(GOFILES_NOVENDOR)
 	@which clang-format > /dev/null; if [ $$? -eq 0 ]; then \
 		clang-format -i $(PROTOFILES); \
