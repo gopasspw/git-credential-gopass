@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -152,7 +151,6 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) {
 	act := &gc{
 		gp: apimock.New(),
 	}
-	// require.NoError(t, act.gp.Set(ctx, "foo", &apimock.Secret{Buf: []byte("bar")}))
 
 	stdout := &bytes.Buffer{}
 	Stdout = stdout
@@ -232,6 +230,12 @@ func Test_getOptions(t *testing.T) {
 			want:    []string{"config", "--local", "credential.helper", "gopass --store=teststore"},
 			wantErr: false,
 		},
+		{
+			name:    "error case with too many scope flags",
+			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true", "system": "true"})},
+			want:    []string{},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -240,9 +244,7 @@ func Test_getOptions(t *testing.T) {
 				t.Errorf("getOptions() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getOptions() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
