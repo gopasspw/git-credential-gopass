@@ -64,6 +64,12 @@ func main() {
 		"This command allows you to cache your git-credentials with gopass." +
 		"Activate by using `git config --global credential.helper gopass`"
 	app.EnableBashCompletion = true
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:  "store",
+			Usage: "First part of path to find the secret.",
+		},
+	}
 	app.Commands = []*cli.Command{
 		{
 			Name:   "get",
@@ -99,6 +105,10 @@ func main() {
 				&cli.BoolFlag{
 					Name:  "system",
 					Usage: "Install for all users, requires superuser rights",
+				},
+				&cli.StringFlag{
+					Name:  "store",
+					Usage: "First part of path to find the secret.",
 				},
 			},
 		},

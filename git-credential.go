@@ -135,6 +135,14 @@ func filter(ls []string, prefix string) []string {
 	return out
 }
 
+func composePath(c *cli.Context, cred *gitCredentials) string {
+	store := c.String("store") + "/"
+	if store == "/" {
+		store = ""
+	}
+	return store + "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
+}
+
 // Get returns a credential to git
 func (s *gc) Get(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
@@ -144,7 +152,8 @@ func (s *gc) Get(c *cli.Context) error {
 		return fmt.Errorf("error: %v while parsing git-credential", err)
 	}
 	// try git/host/username... If username is empty, simply try git/host
-	path := "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
+
+	path := composePath(c, cred)
 	if _, err := s.gp.Get(ctx, path, "latest"); err != nil {
 		// if the looked up path is a directory with only one entry (e.g. one user per host), take the subentry instead
 		ls, err := s.gp.List(ctx)
@@ -186,7 +195,7 @@ func (s *gc) Store(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("error: %v while parsing git-credential", err)
 	}
-	path := "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
+	path := composePath(c, cred)
 	// This should never really be an issue because git automatically removes invalid credentials first
 	if _, err := s.gp.Get(ctx, path, "latest"); err == nil {
 		debug.Log(""+
@@ -217,7 +226,7 @@ func (s *gc) Erase(c *cli.Context) error {
 		return fmt.Errorf("error: %v while parsing git-credential", err)
 	}
 
-	path := "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
+	path := composePath(c, cred)
 	if err := s.gp.Remove(ctx, path); err != nil {
 		fmt.Fprintln(os.Stderr, "gopass error: error while writing to store")
 	}
@@ -227,6 +236,18 @@ func (s *gc) Erase(c *cli.Context) error {
 // Configure configures gopass as git's credential.helper
 func (s *gc) Configure(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
+	options, err := getOptions(c)
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, "git", options...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func getOptions(c *cli.Context) ([]string, error) {
+	options := []string{}
 	flags := 0
 	flag := "--global"
 	if c.Bool("local") {
@@ -242,13 +263,16 @@ func (s *gc) Configure(c *cli.Context) error {
 		flags++
 	}
 	if flags >= 2 {
-		return fmt.Errorf("only specify one target of installation")
+		return options, fmt.Errorf("only specify one target of installation")
 	}
 	if flags == 0 {
 		log.Println("No target given, assuming --global.")
 	}
-	cmd := exec.CommandContext(ctx, "git", "config", flag, "credential.helper", `"gopass"`)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	options = append(options, "config", flag, "credential.helper")
+	store := "gopass"
+	if s := c.String("store"); s != "" {
+		store = fmt.Sprintf("gopass --store=%s", s)
+	}
+	options = append(options, store)
+	return options, nil
 }

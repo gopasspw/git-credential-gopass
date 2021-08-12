@@ -51,6 +51,20 @@ git-credential-gopass configure --<global|local|system>
 
 For further git scoping details show up the documentation of [git credentials].
 
+#### Option --store
+
+You can save the credentials in a team store to share or manage a functional user for CI. Or just because you want it to.
+
+```bash
+git config credential.helper "gopass --store=ci-team"
+```
+
+```bash
+git-credential-gopass configure --local --store=ci-team
+```
+
+This puts the value in front of the Gopass search path.
+
 [Gopass]: https://github.com/gopasspw/gopass
 [releases]: https://github.com/gopasspw/git-credential-gopass/releases
 [git credentials]: https://git-scm.com/docs/gitcredentials

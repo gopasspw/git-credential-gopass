@@ -15,6 +15,7 @@ import (
 	"github.com/gopasspw/gopass/tests/gptest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 )
 
 func TestGitCredentialFormat(t *testing.T) {
@@ -143,4 +144,107 @@ func TestGitCredentialHelper(t *testing.T) {
 	assert.Error(t, act.Store(c))
 	termio.Stdin = strings.NewReader("a")
 	assert.Error(t, act.Erase(c))
+}
+
+func TestGitCredentialHelperWithStoreFlag(t *testing.T) {
+	ctx := context.Background()
+	act := &gc{
+		gp: apimock.New(),
+	}
+
+	stdout := &bytes.Buffer{}
+	Stdout = stdout
+	color.NoColor = true
+	defer func() {
+		Stdout = os.Stdout
+		termio.Stdin = os.Stdin
+	}()
+
+	c := gptest.CliCtxWithFlags(ctx, t, map[string]string{
+		"store": "teststore",
+	})
+
+	ctx = ctxutil.WithStdin(ctx, true)
+	c.Context = ctx
+
+	s := "protocol=https\n" +
+		"host=example.com\n" +
+		"username=bob\n"
+
+	termio.Stdin = strings.NewReader(s)
+	assert.NoError(t, act.Get(c))
+	assert.Equal(t, "", stdout.String())
+
+	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
+	assert.NoError(t, act.Store(c))
+	stdout.Reset()
+
+	termio.Stdin = strings.NewReader(s)
+	assert.NoError(t, act.Get(c))
+	read, err := parseGitCredentials(stdout)
+	assert.NoError(t, err)
+	assert.Equal(t, "secr3=t", read.Password)
+	stdout.Reset()
+
+	c = gptest.CliCtxWithFlags(ctx, t, map[string]string{
+		"store": "otherstore",
+	})
+
+	termio.Stdin = strings.NewReader(s)
+	assert.NoError(t, act.Get(c))
+	assert.Equal(t, "", stdout.String())
+
+}
+
+func Test_getOptions(t *testing.T) {
+	type args struct {
+		c *cli.Context
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name:    "without any flag",
+			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{})},
+			want:    []string{"config", "--global", "credential.helper", "gopass"},
+			wantErr: false,
+		},
+		{
+			name:    "with local scope flag",
+			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true"})},
+			want:    []string{"config", "--local", "credential.helper", "gopass"},
+			wantErr: false,
+		},
+		{
+			name:    "with system scope flag",
+			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"system": "true"})},
+			want:    []string{"config", "--system", "credential.helper", "gopass"},
+			wantErr: false,
+		},
+		{
+			name:    "with local scope flag and store",
+			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true", "store": "teststore"})},
+			want:    []string{"config", "--local", "credential.helper", "gopass --store=teststore"},
+			wantErr: false,
+		},
+		{
+			name:    "error case with too many scope flags",
+			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true", "system": "true"})},
+			want:    []string{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getOptions(tt.args.c)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getOptions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
