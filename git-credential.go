@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,10 +19,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	// Stdout is exported for tests
-	Stdout io.Writer = os.Stdout
-)
+// Stdout is exported for tests.
+var Stdout io.Writer = os.Stdout
 
 type gitCredentials struct {
 	Protocol string
@@ -31,7 +30,7 @@ type gitCredentials struct {
 	Password string
 }
 
-// WriteTo writes the given credentials to the given io.Writer in the git-credential format
+// WriteTo writes the given credentials to the given io.Writer in the git-credential format.
 func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 	var n int64
 	if c.Protocol != "" {
@@ -55,6 +54,7 @@ func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 			return n, err
 		}
 	}
+
 	if c.Username != "" {
 		i, err := io.WriteString(w, "username="+c.Username+"\n")
 		n += int64(i)
@@ -62,6 +62,7 @@ func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 			return n, err
 		}
 	}
+
 	if c.Password != "" {
 		i, err := io.WriteString(w, "password="+c.Password+"\n")
 		n += int64(i)
@@ -69,6 +70,7 @@ func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 			return n, err
 		}
 	}
+
 	return n, nil
 }
 
@@ -82,18 +84,23 @@ func parseGitCredentials(r io.Reader) (*gitCredentials, error) {
 				if key == "" {
 					return c, nil
 				}
+
 				return nil, io.ErrUnexpectedEOF
 			}
+
 			return nil, err
 		}
+
 		key = strings.TrimSuffix(key, "=")
 		val, err := rd.ReadString('\n')
-		if err == io.EOF {
-			err = io.ErrUnexpectedEOF
-		}
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				err = io.ErrUnexpectedEOF
+			}
+
 			return nil, err
 		}
+
 		val = strings.TrimSuffix(val, "\n")
 		switch key {
 		case "protocol":
@@ -114,13 +121,14 @@ type gc struct {
 	gp gopass.Store
 }
 
-// Before is executed before another git-credential command
+// Before is executed before another git-credential command.
 func (s *gc) Before(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
 	ctx = ctxutil.WithInteractive(ctx, false)
 	if !ctxutil.IsStdin(ctx) {
 		return fmt.Errorf("missing stdin from git")
 	}
+
 	return nil
 }
 
@@ -132,6 +140,7 @@ func filter(ls []string, prefix string) []string {
 		}
 		out = append(out, e)
 	}
+
 	return out
 }
 
@@ -140,16 +149,17 @@ func composePath(c *cli.Context, cred *gitCredentials) string {
 	if store == "/" {
 		store = ""
 	}
+
 	return store + "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
 }
 
-// Get returns a credential to git
+// Get returns a credential to git.
 func (s *gc) Get(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
 	ctx = ctxutil.WithNoNetwork(ctx, true)
 	cred, err := parseGitCredentials(termio.Stdin)
 	if err != nil {
-		return fmt.Errorf("error: %v while parsing git-credential", err)
+		return fmt.Errorf("error: %w while parsing git-credential", err)
 	}
 	// try git/host/username... If username is empty, simply try git/host
 
@@ -158,7 +168,7 @@ func (s *gc) Get(c *cli.Context) error {
 		// if the looked up path is a directory with only one entry (e.g. one user per host), take the subentry instead
 		ls, err := s.gp.List(ctx)
 		if err != nil {
-			return fmt.Errorf("error: %v while listing the storage", err)
+			return fmt.Errorf("error: %w while listing the storage", err)
 		}
 		entries := filter(ls, path)
 		if len(entries) < 1 {
@@ -167,6 +177,7 @@ func (s *gc) Get(c *cli.Context) error {
 		}
 		if len(entries) > 1 {
 			fmt.Fprintln(os.Stderr, "gopass error: too many entries")
+
 			return nil
 		}
 		path = entries[0]
@@ -175,6 +186,7 @@ func (s *gc) Get(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	cred.Password = secret.Password()
 	if username, _ := secret.Get("login"); username != "" {
 		// leave the username as is otherwise
@@ -183,18 +195,20 @@ func (s *gc) Get(c *cli.Context) error {
 
 	_, err = cred.WriteTo(Stdout)
 	if err != nil {
-		return fmt.Errorf("could not write to stdout: %s", err)
+		return fmt.Errorf("could not write to stdout: %w", err)
 	}
+
 	return nil
 }
 
-// Store stores a credential got from git
+// Store stores a credential got from git.
 func (s *gc) Store(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
 	cred, err := parseGitCredentials(termio.Stdin)
 	if err != nil {
-		return fmt.Errorf("error: %v while parsing git-credential", err)
+		return fmt.Errorf("error: %w while parsing git-credential", err)
 	}
+
 	path := composePath(c, cred)
 	// This should never really be an issue because git automatically removes invalid credentials first
 	if _, err := s.gp.Get(ctx, path, "latest"); err == nil {
@@ -204,36 +218,39 @@ func (s *gc) Store(c *cli.Context) error {
 			"\"gopass rm %s\"\n",
 			path, path,
 		)
+
 		return nil
 	}
 	secret := secrets.New()
 	secret.SetPassword(cred.Password)
 	if cred.Username != "" {
-		secret.Set("login", cred.Username)
+		_ = secret.Set("login", cred.Username)
 	}
 
 	if err := s.gp.Set(ctx, path, secret); err != nil {
-		fmt.Fprintf(os.Stderr, "gopass error: error while writing to store: %v\n", err)
+		fmt.Fprintf(os.Stderr, "gopass error: error while writing to store: %s\n", err)
 	}
+
 	return nil
 }
 
-// Erase removes a credential got from git
+// Erase removes a credential got from git.
 func (s *gc) Erase(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
 	cred, err := parseGitCredentials(termio.Stdin)
 	if err != nil {
-		return fmt.Errorf("error: %v while parsing git-credential", err)
+		return fmt.Errorf("error: %w while parsing git-credential", err)
 	}
 
 	path := composePath(c, cred)
 	if err := s.gp.Remove(ctx, path); err != nil {
 		fmt.Fprintln(os.Stderr, "gopass error: error while writing to store")
 	}
+
 	return nil
 }
 
-// Configure configures gopass as git's credential.helper
+// Configure configures gopass as git's credential.helper.
 func (s *gc) Configure(c *cli.Context) error {
 	ctx := ctxutil.WithGlobalFlags(c)
 	options, err := getOptions(c)
@@ -243,6 +260,7 @@ func (s *gc) Configure(c *cli.Context) error {
 	cmd := exec.CommandContext(ctx, "git", options...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
 	return cmd.Run()
 }
 
@@ -254,25 +272,32 @@ func getOptions(c *cli.Context) ([]string, error) {
 		flag = "--local"
 		flags++
 	}
+
 	if c.Bool("global") {
 		flag = "--global"
 		flags++
 	}
+
 	if c.Bool("system") {
 		flag = "--system"
 		flags++
 	}
+
 	if flags >= 2 {
 		return options, fmt.Errorf("only specify one target of installation")
 	}
+
 	if flags == 0 {
 		log.Println("No target given, assuming --global.")
 	}
+
 	options = append(options, "config", flag, "credential.helper")
 	store := "gopass"
 	if s := c.String("store"); s != "" {
 		store = fmt.Sprintf("gopass --store=%s", s)
 	}
+
 	options = append(options, store)
+
 	return options, nil
 }

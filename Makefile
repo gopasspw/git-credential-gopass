@@ -100,84 +100,24 @@ full:
 codequality:
 	@echo ">> CODE QUALITY"
 
-	@echo -n "     REVIVE    "
-	@which revive > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u github.com/mgechev/revive; \
+	@echo -n "     GOLANGCI-LINT "
+	@which golangci-lint > /dev/null; if [ $$? -ne 0 ]; then \
+		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	fi
-	@revive -formatter friendly -exclude vendor/... ./...
-	@printf '%s\n' '$(OK)'
+	@golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 --sort-results || exit 1
 
-	@echo -n "     FMT       "
-	@$(foreach gofile, $(GOFILES_NOVENDOR),\
-			out=$$(gofmt -s -l -d -e $(gofile) | tee /dev/stderr); if [ -n "$$out" ]; then exit 1; fi;)
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     CLANGFMT  "
-	@$(foreach pbfile, $(PROTOFILES),\
-			if [ $$(clang-format -output-replacements-xml $(pbfile) | wc -l) -gt 3  ]; then exit 1; fi;)
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     VET       "
-	@$(GO) vet ./...
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     CYCLO     "
-	@which gocyclo > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u github.com/fzipp/gocyclo/cmd/gocyclo; \
-	fi
-	@$(foreach gofile, $(GOFILES_NOVENDOR),\
-			gocyclo -over 22 $(gofile) || exit 1;)
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     LINT      "
-	@which golint > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u golang.org/x/lint/golint; \
-	fi
-	@$(foreach pkg, $(PKGS),\
-			golint -set_exit_status $(pkg) || exit 1;)
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     INEFF     "
-	@which ineffassign > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u github.com/gordonklaus/ineffassign; \
-	fi
-	@ineffassign . || exit 1
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     SPELL     "
-	@which misspell > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u github.com/client9/misspell/cmd/misspell; \
-	fi
-	@$(foreach gofile, $(GOFILES_NOVENDOR),\
-			misspell --error $(gofile) || exit 1;)
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     STATICCHECK "
-	@which staticcheck > /dev/null; if [ $$? -ne 0  ]; then \
-		$(GO) get -u honnef.co/go/tools/cmd/staticcheck; \
-	fi
-	@staticcheck $(PKGS) || exit 1
-	@printf '%s\n' '$(OK)'
-
-	@echo -n "     UNPARAM "
-	@which unparam > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u mvdan.cc/unparam; \
-	fi
-	@unparam -exported=false $(PKGS)
 	@printf '%s\n' '$(OK)'
 
 gen:
 	@go generate ./...
 
 fmt:
-	@gofmt -s -l -w $(GOFILES_NOVENDOR)
-	@which goimports > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) get -u golang.org/x/tools/cmd/goimports; \
-	fi
-	@goimports -l -w $(GOFILES_NOVENDOR)
-	@which clang-format > /dev/null; if [ $$? -eq 0 ]; then \
-		clang-format -i $(PROTOFILES); \
-	fi
-	@go mod tidy
+	@gofumpt -s -l -w $(GOFILES_NOVENDOR)
+	@gci write $(GOFILES_NOVENDOR)
+	@$(GO) mod tidy
+
+upgrade: gen fmt
+	@$(GO) get -u ./...
+	@$(GO) mod tidy
 
 .PHONY: clean build completion install sysinfo crosscompile test codequality release goreleaser debsign

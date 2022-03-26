@@ -1,0 +1,94 @@
+name: Build gopass
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+    - name: Ubuntu Dependencies
+      run: sudo apt-get install --yes git gnupg
+    - run: git config --global user.name nobody
+    - run: git config --global user.email foo.bar@example.org
+
+    -
+      name: Debug
+      run:  |
+        echo "Go env ------------------"
+        pwd
+        echo ${HOME}
+        echo ${GITHUB_WORKSPACE}
+        echo ${GOPATH}
+        echo ${GOROOT}
+        env
+      
+    - name: Build and Unit Test
+      run: make travis
+    - name: Integration Test
+      run: make test-integration
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+          shell: msys2 {0}
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        release: false
+        path-type: inherit
+        install: >-
+          base-devel
+          git
+
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - run: git config --global user.name nobody
+    - run: git config --global user.email foo.bar@example.org
+      
+    - name: Build and Unit Test
+      run: make travis
+
+  macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - name: MacOS Dependencies
+      run: brew install git gnupg
+
+    - run: git config --global user.name nobody
+    - run: git config --global user.email foo.bar@example.org
+      
+    - name: Build and Unit Test
+      run: make travis
+      env:
+        SLOW_TEST_FACTOR: 100 
+
