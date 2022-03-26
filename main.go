@@ -16,15 +16,13 @@ const (
 	name = "gopass-git-credentials"
 )
 
-var (
-	// Version is the released version of gopass
-	version string
-)
+// Version is the released version of gopass.
+var version string
 
 func main() {
 	ctx := context.Background()
 
-	// trap Ctrl+C and call cancel on the context
+	// trap Ctrl+C and call cancel on the context.
 	ctx, cancel := context.WithCancel(ctx)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)

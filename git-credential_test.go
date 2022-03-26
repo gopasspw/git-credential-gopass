@@ -19,6 +19,8 @@ import (
 )
 
 func TestGitCredentialFormat(t *testing.T) {
+	t.Parallel()
+
 	data := []io.Reader{
 		strings.NewReader("" +
 			"protocol=https\n" +
@@ -45,6 +47,7 @@ func TestGitCredentialFormat(t *testing.T) {
 			"test",
 		),
 	}
+
 	results := []gitCredentials{
 		{
 			Host:     "example.com",
@@ -56,6 +59,7 @@ func TestGitCredentialFormat(t *testing.T) {
 		{},
 		{},
 	}
+
 	expectsErr := []bool{false, true, true}
 	for i := range data {
 		result, err := parseGitCredentials(data[i])
@@ -78,7 +82,7 @@ func TestGitCredentialFormat(t *testing.T) {
 	}
 }
 
-func TestGitCredentialHelper(t *testing.T) {
+func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 	ctx := context.Background()
 	act := &gc{
 		gp: apimock.New(),
@@ -146,7 +150,7 @@ func TestGitCredentialHelper(t *testing.T) {
 	assert.Error(t, act.Erase(c))
 }
 
-func TestGitCredentialHelperWithStoreFlag(t *testing.T) {
+func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 	ctx := context.Background()
 	act := &gc{
 		gp: apimock.New(),
@@ -193,13 +197,15 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) {
 	termio.Stdin = strings.NewReader(s)
 	assert.NoError(t, act.Get(c))
 	assert.Equal(t, "", stdout.String())
-
 }
 
 func Test_getOptions(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		c *cli.Context
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -237,13 +243,19 @@ func Test_getOptions(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := getOptions(tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getOptions() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
