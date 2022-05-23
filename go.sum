@@ -78,8 +78,8 @@ github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMT
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/twpayne/go-pinentry v0.2.0 h1:hS5NEJiilop9xP9pBX/1NYduzDlGGMdg1KamTBTrOWw=
 github.com/twpayne/go-pinentry v0.2.0/go.mod h1:r6buhMwARxnnL0VRBqfd1tE6Fadk1kfP00GRMutEspY=
-github.com/urfave/cli/v2 v2.7.1 h1:DsAOFeI9T0vmUW4LiGR5mhuCIn5kqGIE4WMU2ytmH00=
-github.com/urfave/cli/v2 v2.7.1/go.mod h1:TYFbtzt/azQoJOrGH5mDfZtS0jIkl/OeFwlRWPR9KRM=
+github.com/urfave/cli/v2 v2.8.0 h1:EZsAB20oRW4nHcB99TTL6PrXpBGIEujMEKdjwruY9KQ=
+github.com/urfave/cli/v2 v2.8.0/go.mod h1:TYFbtzt/azQoJOrGH5mDfZtS0jIkl/OeFwlRWPR9KRM=
 github.com/yuin/goldmark v1.4.0/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.9.0 h1:ECmE8Bn/WFTYwEW/bpKD3M8VtR/zQVbavAoalC1PYyE=
