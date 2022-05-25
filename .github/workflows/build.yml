@@ -37,8 +37,6 @@ jobs:
       
     - name: Build and Unit Test
       run: make travis
-    - name: Integration Test
-      run: make test-integration
 
   windows:
     runs-on: windows-latest
