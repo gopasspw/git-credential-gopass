@@ -25,7 +25,7 @@ OK := $(shell tput setaf 6; echo ' [OK]'; tput sgr0;)
 
 all: build
 build: $(GOPASS_OUTPUT)
-travis: sysinfo crosscompile build install test codequality
+travis: sysinfo crosscompile build test codequality
 
 sysinfo:
 	@echo ">> SYSTEM INFORMATION"
