@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/fatih/color v1.13.0
 	github.com/gopasspw/gopass v1.14.3
-	github.com/stretchr/testify v1.7.4
+	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.10.3
 )
 
