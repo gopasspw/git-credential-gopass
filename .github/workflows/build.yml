@@ -1,4 +1,4 @@
-name: Build gopass
+name: Build git-credential-gopass
 
 on:
   push:
@@ -89,4 +89,3 @@ jobs:
       run: make travis
       env:
         SLOW_TEST_FACTOR: 100 
-

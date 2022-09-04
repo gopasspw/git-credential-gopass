@@ -1,0 +1,69 @@
+# This is a basic workflow to help you get started with Actions
+
+name: release git-credential-gopass
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on tags starting with v, i.e. release tags
+  push:
+    tags:
+      - 'v*'
+          
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      -
+        name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      -
+        name: Import GPG signing key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+      -
+        name: Debug
+        run:  |
+          echo "GPG ---------------------"
+          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
+          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
+          echo "name:        ${{ steps.import_gpg.outputs.name }}"
+          echo "email:       ${{ steps.import_gpg.outputs.email }}"
+          echo "Go env ------------------"
+          pwd
+          echo ${HOME}
+          echo ${GITHUB_WORKSPACE}
+          echo ${GOPATH}
+          echo ${GOROOT}
+          env
+      -
+        name: Generate release-notes
+        run: |
+          go run helpers/changelog/main.go >../RELEASE_NOTES
+      -
+        name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v3.1.0
+        with:
+          version: latest
+          args: release --rm-dist --release-notes=../RELEASE_NOTES
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GOPATH: /home/runner/go
+      -
+        name: "Upload deb files to apt hosting"
+        run: |
+          for D in dist/*.deb; do
+            curl -H"X-Filename: ${D}" -H"X-Apikey: ${APIKEY}" -XPOST --data-binary @$D https://packages.gopass.pw/repos/gopass/upload
+          done
+        env:
+          APIKEY: ${{ secrets.APT_APIKEY }}
