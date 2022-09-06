@@ -29,10 +29,10 @@ Alternatively, use the installable version for your packet manager.
 
 ### Alternative: Building From Source
 
-If you have [Go](https://golang.org/) already installed, you can use `go get` to automatically download the latest version:
+If you have [Go](https://golang.org/) already installed, you can use `go install` to automatically download the latest version:
 
 ```bash
-go get -u github.com/gopasspw/git-credential-gopass
+go install  github.com/gopasspw/git-credential-gopass@latest
 ```
 
 ### Set Git Credential Helper
