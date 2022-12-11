@@ -4,13 +4,12 @@ go 1.18
 
 require (
 	github.com/fatih/color v1.13.0
-	github.com/gopasspw/gopass v1.15.0
+	github.com/gopasspw/gopass v1.15.1
 	github.com/stretchr/testify v1.8.1
-	github.com/urfave/cli/v2 v2.23.5
+	github.com/urfave/cli/v2 v2.23.7
 )
 
 require (
-	bitbucket.org/creachadair/stringset v0.0.10 // indirect
 	filippo.io/age v1.0.0 // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4 // indirect
@@ -37,11 +36,10 @@ require (
 	github.com/jsimonetti/pwscheme v0.0.0-20220922140336-67a4d090f150 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/martinhoefling/goxkcdpwgen v0.1.1 // indirect
+	github.com/martinhoefling/goxkcdpwgen v0.1.2-0.20221205222637-737661b92a0e // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-tty v0.0.4 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/muesli/crunchy v0.4.0 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
@@ -56,10 +54,10 @@ require (
 	github.com/zalando/go-keyring v0.2.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9 // indirect
-	golang.org/x/net v0.2.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/term v0.2.0 // indirect
+	golang.org/x/crypto v0.4.0 // indirect
+	golang.org/x/exp v0.0.0-20221211140036-ad323defaf05 // indirect
+	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/term v0.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
