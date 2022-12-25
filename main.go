@@ -56,7 +56,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = name
-	app.Version = version
+	app.Version = getVersion().String()
 	app.Usage = `Use "gopass" as git's credential.helper`
 	app.Description = "" +
 		"This command allows you to cache your git-credentials with gopass." +
