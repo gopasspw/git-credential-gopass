@@ -33,6 +33,7 @@ type gitCredentials struct {
 // WriteTo writes the given credentials to the given io.Writer in the git-credential format.
 func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 	var n int64
+
 	if c.Protocol != "" {
 		i, err := io.WriteString(w, "protocol="+c.Protocol+"\n")
 		n += int64(i)
@@ -40,6 +41,7 @@ func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 			return n, err
 		}
 	}
+
 	if c.Host != "" {
 		i, err := io.WriteString(w, "host="+c.Host+"\n")
 		n += int64(i)
@@ -47,6 +49,7 @@ func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 			return n, err
 		}
 	}
+
 	if c.Path != "" {
 		i, err := io.WriteString(w, "path="+c.Path+"\n")
 		n += int64(i)
