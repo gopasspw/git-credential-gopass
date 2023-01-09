@@ -110,6 +110,14 @@ func main() {
 				},
 			},
 		},
+		{
+			Name: "version",
+			Action: func(c *cli.Context) error {
+				cli.VersionPrinter(c)
+
+				return nil
+			},
+		},
 	}
 
 	if err := app.RunContext(ctx, os.Args); err != nil {
