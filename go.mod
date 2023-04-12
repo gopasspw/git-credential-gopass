@@ -14,7 +14,7 @@ require (
 	code.rocketnine.space/tslocum/cbind v0.1.5 // indirect
 	filippo.io/age v1.1.1 // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230331115716-d34776aa93ec // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230411080316-8b3893ee7fca // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/boombuler/barcode v1.0.1 // indirect
