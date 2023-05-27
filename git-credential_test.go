@@ -35,6 +35,16 @@ func TestGitCredentialFormat(t *testing.T) {
 			"host=example.com\n" +
 			"username=bob\n" +
 			"foo=bar\n" +
+			"path=test\n" +
+			"password=secr3=t\n" +
+			"password_expiry_utc=2000\n" +
+			"oauth_refresh_token=xyzzy\n",
+		),
+		strings.NewReader("" +
+			"protocol=https\n" +
+			"host=example.com\n" +
+			"username=bob\n" +
+			"foo=bar\n" +
 			"password=secr3=t\n" +
 			"test=",
 		),
@@ -56,11 +66,20 @@ func TestGitCredentialFormat(t *testing.T) {
 			Protocol: "https",
 			Username: "bob",
 		},
+		{
+			Host:              "example.com",
+			Password:          "secr3=t",
+			Path:              "test",
+			Protocol:          "https",
+			Username:          "bob",
+			PasswordExpiryUTC: "2000",
+			OAuthRefreshToken: "xyzzy",
+		},
 		{},
 		{},
 	}
 
-	expectsErr := []bool{false, true, true}
+	expectsErr := []bool{false, false, true, true}
 	for i := range data {
 		result, err := parseGitCredentials(data[i])
 		if expectsErr[i] {
