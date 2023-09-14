@@ -23,11 +23,13 @@ import (
 var Stdout io.Writer = os.Stdout
 
 type gitCredentials struct {
-	Protocol string
-	Host     string
-	Path     string
-	Username string
-	Password string
+	Protocol          string
+	Host              string
+	Path              string
+	Username          string
+	Password          string
+	PasswordExpiryUTC string
+	OAuthRefreshToken string
 }
 
 // WriteTo writes the given credentials to the given io.Writer in the git-credential format.
@@ -68,6 +70,22 @@ func (c *gitCredentials) WriteTo(w io.Writer) (int64, error) {
 
 	if c.Password != "" {
 		i, err := io.WriteString(w, "password="+c.Password+"\n")
+		n += int64(i)
+		if err != nil {
+			return n, err
+		}
+	}
+
+	if c.PasswordExpiryUTC != "" {
+		i, err := io.WriteString(w, "password_expiry_utc="+c.PasswordExpiryUTC+"\n")
+		n += int64(i)
+		if err != nil {
+			return n, err
+		}
+	}
+
+	if c.OAuthRefreshToken != "" {
+		i, err := io.WriteString(w, "oauth_refresh_token="+c.OAuthRefreshToken+"\n")
 		n += int64(i)
 		if err != nil {
 			return n, err
@@ -116,6 +134,10 @@ func parseGitCredentials(r io.Reader) (*gitCredentials, error) {
 			c.Username = val
 		case "password":
 			c.Password = val
+		case "password_expiry_utc":
+			c.PasswordExpiryUTC = val
+		case "oauth_refresh_token":
+			c.OAuthRefreshToken = val
 		}
 	}
 }
@@ -195,6 +217,12 @@ func (s *gc) Get(c *cli.Context) error {
 		// leave the username as is otherwise
 		cred.Username = username
 	}
+	if expiry, _ := secret.Get("password_expiry_utc"); expiry != "" {
+		cred.PasswordExpiryUTC = expiry
+	}
+	if rt, _ := secret.Get("oauth_refresh_token"); rt != "" {
+		cred.OAuthRefreshToken = rt
+	}
 
 	_, err = cred.WriteTo(Stdout)
 	if err != nil {
@@ -228,6 +256,12 @@ func (s *gc) Store(c *cli.Context) error {
 	secret.SetPassword(cred.Password)
 	if cred.Username != "" {
 		_ = secret.Set("login", cred.Username)
+	}
+	if cred.PasswordExpiryUTC != "" {
+		_ = secret.Set("password_expiry_utc", cred.PasswordExpiryUTC)
+	}
+	if cred.OAuthRefreshToken != "" {
+		_ = secret.Set("oauth_refresh_token", cred.OAuthRefreshToken)
 	}
 
 	if err := s.gp.Set(ctx, path, secret); err != nil {
