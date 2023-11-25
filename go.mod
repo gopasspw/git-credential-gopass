@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/fatih/color v1.16.0
-	github.com/gopasspw/gopass v1.15.9
+	github.com/gopasspw/gopass v1.15.10
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 )
@@ -36,7 +36,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/gopasspw/gopass-hibp v1.15.8 // indirect
+	github.com/gopasspw/gopass-hibp v1.15.9 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
@@ -52,7 +52,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect
 	github.com/makiuchi-d/gozxing v0.1.1 // indirect
-	github.com/martinhoefling/goxkcdpwgen v0.1.2-0.20221205222637-737661b92a0e // indirect
+	github.com/martinhoefling/goxkcdpwgen v0.1.2-0.20231122080842-e51aa57005ca // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
