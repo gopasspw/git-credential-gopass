@@ -64,9 +64,9 @@ func TestGitCredentialFormat(t *testing.T) {
 	for i := range data {
 		result, err := parseGitCredentials(data[i])
 		if expectsErr[i] {
-			assert.Error(t, err)
+			require.Error(t, err)
 		} else {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		if err != nil {
 			continue
@@ -74,10 +74,10 @@ func TestGitCredentialFormat(t *testing.T) {
 		assert.Equal(t, results[i], *result)
 		buf := &bytes.Buffer{}
 		n, err := result.WriteTo(buf)
-		assert.NoError(t, err, "could not serialize credentials")
+		require.NoError(t, err, "could not serialize credentials")
 		assert.Equal(t, buf.Len(), int(n))
 		parseback, err := parseGitCredentials(buf)
-		assert.NoError(t, err, "failed parsing my own output")
+		require.NoError(t, err, "failed parsing my own output")
 		assert.Equal(t, results[i], *parseback, "failed parsing my own output")
 	}
 }
@@ -100,54 +100,54 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 	c := gptest.CliCtx(ctx, t)
 
 	// before without stdin
-	assert.Error(t, act.Before(c))
+	require.Error(t, act.Before(c))
 
 	// before with stdin
 	ctx = ctxutil.WithStdin(ctx, true)
 	c.Context = ctx
-	assert.NoError(t, act.Before(c))
+	require.NoError(t, act.Before(c))
 
 	s := "protocol=https\n" +
 		"host=example.com\n" +
 		"username=bob\n"
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	assert.Equal(t, "", stdout.String())
 
 	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
-	assert.NoError(t, act.Store(c))
+	require.NoError(t, act.Store(c))
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	read, err := parseGitCredentials(stdout)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "secr3=t", read.Password)
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader("host=example.com\n")
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	read, err = parseGitCredentials(stdout)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "secr3=t", read.Password)
 	assert.Equal(t, "bob", read.Username)
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Erase(c))
+	require.NoError(t, act.Erase(c))
 	assert.Equal(t, "", stdout.String())
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	assert.Equal(t, "", stdout.String())
 
 	termio.Stdin = strings.NewReader("a")
-	assert.Error(t, act.Get(c))
+	require.Error(t, act.Get(c))
 	termio.Stdin = strings.NewReader("a")
-	assert.Error(t, act.Store(c))
+	require.Error(t, act.Store(c))
 	termio.Stdin = strings.NewReader("a")
-	assert.Error(t, act.Erase(c))
+	require.Error(t, act.Erase(c))
 }
 
 func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
@@ -176,17 +176,17 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 		"username=bob\n"
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	assert.Equal(t, "", stdout.String())
 
 	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
-	assert.NoError(t, act.Store(c))
+	require.NoError(t, act.Store(c))
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	read, err := parseGitCredentials(stdout)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "secr3=t", read.Password)
 	stdout.Reset()
 
@@ -195,7 +195,7 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 	})
 
 	termio.Stdin = strings.NewReader(s)
-	assert.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(c))
 	assert.Equal(t, "", stdout.String())
 }
 
