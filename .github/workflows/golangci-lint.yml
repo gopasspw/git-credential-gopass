@@ -21,7 +21,7 @@ jobs:
           go-version: 1.22
       - uses: actions/checkout@v4
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v5
         with:
           version: latest # we have a list of linters in our .golangci.yml config file
           only-new-issues: true
