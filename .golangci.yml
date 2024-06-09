@@ -1,5 +1,6 @@
 run:
   timeout: 5m
+  go: "1.22"
 
 linters-settings:
   gocyclo:
@@ -8,7 +9,6 @@ linters-settings:
     max-complexity: 22
     skip-tests: true
   staticcheck:
-    go: "1.22"
     # https://staticcheck.io/docs/options#checks
     checks: ["all","-SA1019"]
   funlen:
@@ -20,13 +20,11 @@ linters:
   disable:
   - bodyclose
   - contextcheck
-  - deadcode
   - depguard
   - durationcheck
   - dupl
   - dupword
   - exhaustruct
-  - exhaustivestruct
   - forbidigo
   - gci
   - gochecknoglobals
@@ -36,33 +34,27 @@ linters:
   - gocritic
   - gocyclo
   - godox
-  - goerr113
-  - golint
+  - err113
   - gomnd
   - gosec
   - gosimple
   - govet
-  - interfacer
-  - ifshort
   - inamedparam
   - interfacebloat
   - ireturn
   - lll
   - maintidx
-  - maligned
+  - mnd
   - musttag
   - nilerr
   - noctx
   - nolintlint
-  - nosnakecase
   - paralleltest
   - perfsprint
   - revive
   - rowserrcheck
-  - scopelint
   - sqlclosecheck
   - staticcheck
-  - structcheck
   - stylecheck
   - tagliatelle
   - testpackage
@@ -70,7 +62,6 @@ linters:
   - typecheck
   - unparam
   - unused
-  - varcheck
   - varnamelen
   - wastedassign
   - wrapcheck
