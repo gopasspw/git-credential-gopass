@@ -3,6 +3,11 @@ run:
   go: "1.22"
 
 linters-settings:
+  errcheck:
+    exclude-functions:
+      - fmt.Fprint
+      - fmt.Fprintf
+      - fmt.Fprintln
   gocyclo:
     min-complexity: 22
   cyclop:
@@ -16,56 +21,66 @@ linters-settings:
     statements: 100
 
 linters:
-  enable-all: true
-  disable:
+  enable:
+  - asasalint
+  - asciicheck
+  - bidichk
   - bodyclose
-  - contextcheck
-  - depguard
-  - durationcheck
-  - dupl
-  - dupword
-  - exhaustruct
-  - forbidigo
-  - gci
-  - gochecknoglobals
-  - gochecknoinits
-  - gocognit
-  - goconst
-  - gocritic
-  - gocyclo
-  - godox
-  - err113
-  - gomnd
-  - gosec
-  - gosimple
-  - govet
-  - inamedparam
-  - interfacebloat
-  - ireturn
-  - lll
-  - maintidx
-  - mnd
-  - musttag
-  - nilerr
-  - noctx
-  - nolintlint
-  - paralleltest
-  - perfsprint
-  - revive
-  - rowserrcheck
-  - sqlclosecheck
-  - staticcheck
-  - stylecheck
-  - tagliatelle
-  - testpackage
-  - tparallel
-  - typecheck
-  - unparam
-  - unused
-  - varnamelen
-  - wastedassign
-  - wrapcheck
-  - wsl
+  - containedctx
+  - copyloopvar
+  - cyclop
+  - decorder
+  - dogsled
+  - errcheck
+  - errchkjson
+  - errname
+  - errorlint
+  - exhaustive
+  - exportloopref
+  - forcetypeassert
+  - funlen
+  - ginkgolinter
+  - gocheckcompilerdirectives
+  - gochecksumtype
+  - godot
+  - gofmt
+  - gofumpt
+  - goheader
+  - goimports
+  - gomoddirectives
+  - gomodguard
+  - goprintffuncname
+  - gosmopolitan
+  - grouper
+  - importas
+  - ineffassign
+  - intrange
+  - loggercheck
+  - makezero
+  - mirror
+  - misspell
+  - nakedret
+  - nestif
+  - nilnil
+  - nlreturn
+  - nonamedreturns
+  - nosprintfhostport
+  - prealloc
+  - predeclared
+  - promlinter
+  - protogetter
+  - reassign
+  - sloglint
+  - spancheck
+  - tagalign
+  - tenv
+  - testableexamples
+  - testifylint
+  - thelper
+  - unconvert
+  - usestdlibvars
+  - whitespace
+  - zerologlint
 
 issues:
   max-issues-per-linter: 0 # disable limit; report all issues of a linter
