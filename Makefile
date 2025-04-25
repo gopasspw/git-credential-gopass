@@ -25,7 +25,9 @@ OK := $(shell tput setaf 6; echo ' [OK]'; tput sgr0;)
 
 all: build
 build: $(GOPASS_OUTPUT)
-travis: sysinfo crosscompile build test codequality
+gha-linux: sysinfo crosscompile build test
+gha-osx: build test
+gha-windows: build test
 
 sysinfo:
 	@echo ">> SYSTEM INFORMATION"

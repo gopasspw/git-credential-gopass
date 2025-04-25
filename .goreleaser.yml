@@ -3,6 +3,7 @@
 #
 # Build customization
 project_name: git-credential-gopass
+version: 2
 
 before:
   hooks:
@@ -41,10 +42,10 @@ builds:
 archives:
   - id: git-credential-gopass
     name_template: "{{.Binary}}-{{.Version}}-{{.Os}}-{{.Arch}}{{ if .Arm }}v{{.Arm }}{{ end }}"
-    format: tar.gz
+    formats: ['tar.gz']
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ['zip']
     files:
       - CHANGELOG.md
       - LICENSE
