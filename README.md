@@ -65,6 +65,38 @@ git-credential-gopass configure --local --store=ci-team
 
 This puts the value in front of the Gopass search path.
 
+## Usage
+
+After `git-credential-gopass` is set up it will be used by `git` to query and store credentials when they are needed.
+Once you clone a Git repo that requires HTTP Authentication it will automatically create a new entry under the pattern
+`git/HOST_PORT/REPO`. The secret must at least contain the password and the user like this:
+
+```
+Secret: git/localhost_8080/gopass
+
+password
+login: username
+```
+
+## Testing
+
+If you don't have a password protected git repository available and don't want to use an SaaS provider like GitHub,
+you can use the small helper tool that is included in this repository to set up a test environment.
+
+Example usage:
+
+```bash
+$ mkdir -p /tmp/gitrepos
+$ cd /tmp/gitrepos
+$ git init --bare repo.git
+$ go run helpers/githost/main.go -repo-root /tmp/gitrepos
+$ git clone http://localhost:8080/repo.git
+# Git will ask for username and password the first time you access this repo.
+# Afterwards it will be cached and read from gopass.
+```
+
+## Links
+
 [Gopass]: https://github.com/gopasspw/gopass
 [releases]: https://github.com/gopasspw/git-credential-gopass/releases
 [git credentials]: https://git-scm.com/docs/gitcredentials
