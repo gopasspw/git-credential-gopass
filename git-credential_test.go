@@ -312,7 +312,7 @@ func TestIntegration(t *testing.T) {
 	// URL is something like http://127.0.0.1:12345 and we need to store the secret as
 	// `git/127.0.0.1_12345.txt`, i.e. first the `git/` prefix, then the URL with the port separated by `_`
 	// and finally `.txt` suffix for the plaintext "encryption" the test helper uses.
-	fn := filepath.Join(gp.StoreDir(""), "git", strings.Replace(strings.TrimPrefix(srv.URL, "http://"), ":", "_", -1)+".txt")
+	fn := filepath.Join(gp.StoreDir(""), "git", strings.ReplaceAll(strings.TrimPrefix(srv.URL, "http://"), ":", "_")+".txt")
 	require.NoError(t, os.MkdirAll(filepath.Dir(fn), 0o700))
 	require.NoError(t, os.WriteFile(fn, []byte("hunter2\nlogin: bob\n"), 0o600))
 
