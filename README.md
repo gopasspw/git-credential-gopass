@@ -72,7 +72,7 @@ Once you clone a Git repo that requires HTTP Authentication it will automaticall
 `git/HOST_PORT/REPO`. The secret must at least contain the password and the user like this:
 
 ```
-Secret: git/localhost_8080/gopass
+Secret: git/localhost_8080
 
 password
 login: username

@@ -3,11 +3,16 @@ package main
 import (
 	"bytes"
 	"io"
+	"net/http/httptest"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/fatih/color"
+	"github.com/gopasspw/git-credential-gopass/helpers/githost/githttp"
+	"github.com/gopasspw/gopass/helpers/gitutils"
 	"github.com/gopasspw/gopass/pkg/ctxutil"
 	"github.com/gopasspw/gopass/pkg/gopass/apimock"
 	"github.com/gopasspw/gopass/pkg/termio"
@@ -257,4 +262,61 @@ func Test_getOptions(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// TestIntegration is a test for the integration of git-credential-gopass with a Git repository.
+// It creates a temporary Git repository, sets up a remote, and tests the credential helper.
+// First it tries to fetch from the remote without credentials, which should fail.
+// Then it sets the credentials in the password store and tries to fetch again, which should succeed.
+func TestIntegration(t *testing.T) {
+	ctx := t.Context()
+
+	// Create a temporary directory for the test
+	td := t.TempDir()
+
+	// Create a new Git repository in the temporary directory
+	gitDir := filepath.Join(td, "test-repo")
+	gitutils.InitGitDir(t, gitDir)
+
+	// Create a new Git remote
+	gitRemoteDir := filepath.Join(td, "test-remote.git")
+	gitutils.InitGitBare(t, gitRemoteDir)
+
+	// Create a password store
+	gp := gptest.NewUnitTester(t)
+	require.NoError(t, gp.InitStore(""))
+
+	// Start the HTTP server
+	srv := httptest.NewServer(githttp.BasicAuthMiddleware(githttp.GitHandler(td), "bob", "hunter2"))
+	defer srv.Close()
+
+	remoteURL := srv.URL + "/test-remote.git"
+	// Add the remote to the Git repository
+	cmd := exec.CommandContext(ctx, "git", "-C", gitDir, "remote", "add", "origin", remoteURL)
+	require.NoError(t, cmd.Run())
+
+	// Avoid asking for credentials
+	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "config", "--local", "credential.interactive", "false")
+	require.NoError(t, cmd.Run())
+
+	// Set the credential helper to use gopass
+	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "config", "--local", "credential.helper", "gopass")
+	require.NoError(t, cmd.Run())
+
+	// Do an initial fetch, it should fail because we don't have credentials yet.
+	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "fetch", "origin")
+	err := cmd.Run()
+	require.Error(t, err, "fetch should fail without credentials")
+
+	// Set credentials in the password store
+	// URL is something like http://127.0.0.1:12345 and we need to store the secret as
+	// `git/127.0.0.1_12345.txt`, i.e. first the `git/` prefix, then the URL with the port separated by `_`
+	// and finally `.txt` suffix for the plaintext "encryption" the test helper uses.
+	fn := filepath.Join(gp.StoreDir(""), "git", strings.Replace(strings.TrimPrefix(srv.URL, "http://"), ":", "_", -1)+".txt")
+	require.NoError(t, os.MkdirAll(filepath.Dir(fn), 0o700))
+	require.NoError(t, os.WriteFile(fn, []byte("hunter2\nlogin: bob\n"), 0o600))
+
+	// Now fetch again, it should succeed
+	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "fetch", "origin")
+	require.NoError(t, cmd.Run(), "fetch should succeed with credentials")
 }
