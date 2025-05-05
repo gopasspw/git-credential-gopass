@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"os"
 	"strings"
@@ -83,7 +82,7 @@ func TestGitCredentialFormat(t *testing.T) {
 }
 
 func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
-	ctx := context.Background()
+	ctx := t.Context()
 	act := &gc{
 		gp: apimock.New(),
 	}
@@ -113,7 +112,7 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 
 	termio.Stdin = strings.NewReader(s)
 	require.NoError(t, act.Get(c))
-	assert.Equal(t, "", stdout.String())
+	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
 	require.NoError(t, act.Store(c))
@@ -136,11 +135,11 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 
 	termio.Stdin = strings.NewReader(s)
 	require.NoError(t, act.Erase(c))
-	assert.Equal(t, "", stdout.String())
+	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s)
 	require.NoError(t, act.Get(c))
-	assert.Equal(t, "", stdout.String())
+	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader("a")
 	require.Error(t, act.Get(c))
@@ -151,7 +150,7 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 }
 
 func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
-	ctx := context.Background()
+	ctx := t.Context()
 	act := &gc{
 		gp: apimock.New(),
 	}
@@ -177,7 +176,7 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 
 	termio.Stdin = strings.NewReader(s)
 	require.NoError(t, act.Get(c))
-	assert.Equal(t, "", stdout.String())
+	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
 	require.NoError(t, act.Store(c))
@@ -196,7 +195,7 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 
 	termio.Stdin = strings.NewReader(s)
 	require.NoError(t, act.Get(c))
-	assert.Equal(t, "", stdout.String())
+	assert.Empty(t, stdout.String())
 }
 
 func Test_getOptions(t *testing.T) {
@@ -214,38 +213,37 @@ func Test_getOptions(t *testing.T) {
 	}{
 		{
 			name:    "without any flag",
-			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{})},
+			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{})},
 			want:    []string{"config", "--global", "credential.helper", "gopass"},
 			wantErr: false,
 		},
 		{
 			name:    "with local scope flag",
-			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true"})},
+			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"local": "true"})},
 			want:    []string{"config", "--local", "credential.helper", "gopass"},
 			wantErr: false,
 		},
 		{
 			name:    "with system scope flag",
-			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"system": "true"})},
+			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"system": "true"})},
 			want:    []string{"config", "--system", "credential.helper", "gopass"},
 			wantErr: false,
 		},
 		{
 			name:    "with local scope flag and store",
-			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true", "store": "teststore"})},
+			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"local": "true", "store": "teststore"})},
 			want:    []string{"config", "--local", "credential.helper", "gopass --store=teststore"},
 			wantErr: false,
 		},
 		{
 			name:    "error case with too many scope flags",
-			args:    args{c: gptest.CliCtxWithFlags(context.Background(), t, map[string]string{"local": "true", "system": "true"})},
+			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"local": "true", "system": "true"})},
 			want:    []string{},
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

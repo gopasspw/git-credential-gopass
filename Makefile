@@ -25,7 +25,9 @@ OK := $(shell tput setaf 6; echo ' [OK]'; tput sgr0;)
 
 all: build
 build: $(GOPASS_OUTPUT)
-travis: sysinfo crosscompile build test codequality
+gha-linux: sysinfo crosscompile build test
+gha-osx: build test
+gha-windows: build test
 
 sysinfo:
 	@echo ">> SYSTEM INFORMATION"
@@ -94,7 +96,7 @@ crosscompile:
 	@printf '%s\n' '$(OK)'
 
 full:
-	@echo -n ">> COMPILE linux/amd64 xc"
+	@echo -n ">> COMPILE linux/amd64"
 	$(GO) build -o $(GOPASS_OUTPUT)-full
 
 codequality:
@@ -102,9 +104,9 @@ codequality:
 
 	@echo -n "     GOLANGCI-LINT "
 	@which golangci-lint > /dev/null; if [ $$? -ne 0 ]; then \
-		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.1; \
 	fi
-	@golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 --sort-results || exit 1
+	@golangci-lint run --max-issues-per-linter 0 --max-same-issues 0 || exit 1
 
 	@printf '%s\n' '$(OK)'
 
