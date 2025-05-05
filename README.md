@@ -70,7 +70,7 @@ This puts the value in front of the Gopass search path.
 If you want to use this with [`git-send-email`](https://git-scm.com/docs/git-send-email) you'll need to:
 
 1. [Set Git Credential Helper](#set-git-credential-helper)
-2. Put your secret (encrypted) in `.../gopass/stores/root/git/example.com_465/username.gpg`. It is important that the host, top level domain, port and username are there.
+2. Put your secret (encrypted) in `git/example.com_465/username.gpg`. It is important that the host, top level domain, port and username are there.
 3. Include an [`[sendemail]`](https://git-scm.com/docs/git-send-email#_examples) in your `.gitconfig` or alternatively `.git/config`. Remember to prefer `smtpEncryption = ssl` and `smtpServerPort = 465` if your provider supports [implicit TLS](https://git-scm.com/docs/git-send-email#Documentation/git-send-email.txt---smtp-encryptionltencryptiongt).
 
 [Gopass]: https://github.com/gopasspw/gopass
