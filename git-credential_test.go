@@ -274,6 +274,12 @@ func TestIntegration(t *testing.T) {
 	// Create a temporary directory for the test
 	td := t.TempDir()
 
+	// Create a bin directory for the test
+	binDir := filepath.Join(td, "bin")
+	require.NoError(t, os.MkdirAll(binDir, 0o700))
+
+	// TODO: Copy the credential helper binary to the bin directory.
+
 	// Create a new Git repository in the temporary directory
 	gitDir := filepath.Join(td, "test-repo")
 	gitutils.InitGitDir(t, gitDir)
@@ -305,6 +311,7 @@ func TestIntegration(t *testing.T) {
 
 	// Do an initial fetch, it should fail because we don't have credentials yet.
 	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "fetch", "origin")
+	// TODO: Add the location of the helper binary to the PATH.
 	err := cmd.Run()
 	require.Error(t, err, "fetch should fail without credentials")
 
@@ -318,5 +325,6 @@ func TestIntegration(t *testing.T) {
 
 	// Now fetch again, it should succeed
 	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "fetch", "origin")
+	// TODO: Add the location of the helper binary to the PATH.
 	require.NoError(t, cmd.Run(), "fetch should succeed with credentials")
 }
