@@ -348,5 +348,6 @@ func prependPath(t *testing.T, env []string, path string) []string {
 		}
 	}
 	env = append(env, "PATH="+path)
+
 	return env
 }
