@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -270,7 +271,7 @@ func Test_getOptions(t *testing.T) {
 // First it tries to fetch from the remote without credentials, which should fail.
 // Then it sets the credentials in the password store and tries to fetch again, which should succeed.
 func TestIntegration(t *testing.T) {
-	if !fsutil.IsFile("git-credential-gopass") {
+	if !fsutil.IsFile("git-credential-gopass") || runtime.GOOS == "windows" {
 		t.Skip("Skipping integration test, git-credential-gopass binary not found. Use make test to run unit tests.")
 	}
 
