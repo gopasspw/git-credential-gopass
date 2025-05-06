@@ -65,6 +65,14 @@ git-credential-gopass configure --local --store=ci-team
 
 This puts the value in front of the Gopass search path.
 
+#### Using with SMTP
+
+If you want to use this with [`git-send-email`](https://git-scm.com/docs/git-send-email) you'll need to:
+
+1. [Set Git Credential Helper](#set-git-credential-helper)
+2. Put your secret (encrypted) in `git/example.com_465/username.gpg`. It is important that the host, top level domain, port and username are there.
+3. Include an [`[sendemail]`](https://git-scm.com/docs/git-send-email#_examples) in your `.gitconfig` or alternatively `.git/config`. Remember to prefer `smtpEncryption = ssl` and `smtpServerPort = 465` if your provider supports [implicit TLS](https://git-scm.com/docs/git-send-email#Documentation/git-send-email.txt---smtp-encryptionltencryptiongt).
+
 ## Usage
 
 After `git-credential-gopass` is set up it will be used by `git` to query and store credentials when they are needed.
@@ -94,8 +102,6 @@ $ git clone http://localhost:8080/repo.git
 # Git will ask for username and password the first time you access this repo.
 # Afterwards it will be cached and read from gopass.
 ```
-
-## Links
 
 [Gopass]: https://github.com/gopasspw/gopass
 [releases]: https://github.com/gopasspw/git-credential-gopass/releases
