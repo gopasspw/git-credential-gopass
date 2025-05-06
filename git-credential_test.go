@@ -14,6 +14,7 @@ import (
 	"github.com/gopasspw/git-credential-gopass/helpers/githost/githttp"
 	"github.com/gopasspw/gopass/helpers/gitutils"
 	"github.com/gopasspw/gopass/pkg/ctxutil"
+	"github.com/gopasspw/gopass/pkg/fsutil"
 	"github.com/gopasspw/gopass/pkg/gopass/apimock"
 	"github.com/gopasspw/gopass/pkg/termio"
 	"github.com/gopasspw/gopass/tests/gptest"
@@ -269,6 +270,10 @@ func Test_getOptions(t *testing.T) {
 // First it tries to fetch from the remote without credentials, which should fail.
 // Then it sets the credentials in the password store and tries to fetch again, which should succeed.
 func TestIntegration(t *testing.T) {
+	if !fsutil.IsFile("git-credential-gopass") {
+		t.Skip("Skipping integration test, git-credential-gopass binary not found. Use make test to run unit tests.")
+	}
+
 	ctx := t.Context()
 
 	// Create a temporary directory for the test
@@ -278,7 +283,8 @@ func TestIntegration(t *testing.T) {
 	binDir := filepath.Join(td, "bin")
 	require.NoError(t, os.MkdirAll(binDir, 0o700))
 
-	// TODO: Copy the credential helper binary to the bin directory.
+	// Copy the credential helper binary to the bin directory.
+	require.NoError(t, fsutil.CopyFile("git-credential-gopass", filepath.Join(binDir, "git-credential-gopass")))
 
 	// Create a new Git repository in the temporary directory
 	gitDir := filepath.Join(td, "test-repo")
@@ -311,7 +317,8 @@ func TestIntegration(t *testing.T) {
 
 	// Do an initial fetch, it should fail because we don't have credentials yet.
 	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "fetch", "origin")
-	// TODO: Add the location of the helper binary to the PATH.
+	// Add the location of the helper binary to the PATH.
+	cmd.Env = prependPath(t, os.Environ(), binDir)
 	err := cmd.Run()
 	require.Error(t, err, "fetch should fail without credentials")
 
@@ -325,6 +332,21 @@ func TestIntegration(t *testing.T) {
 
 	// Now fetch again, it should succeed
 	cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "fetch", "origin")
-	// TODO: Add the location of the helper binary to the PATH.
+	// Add the location of the helper binary to the PATH.
+	cmd.Env = prependPath(t, os.Environ(), binDir)
 	require.NoError(t, cmd.Run(), "fetch should succeed with credentials")
+}
+
+func prependPath(t *testing.T, env []string, path string) []string {
+	t.Helper()
+
+	for i, e := range env {
+		if strings.HasPrefix(e, "PATH=") {
+			env[i] = "PATH=" + path + string(os.PathListSeparator) + e[5:]
+
+			return env
+		}
+	}
+	env = append(env, "PATH="+path)
+	return env
 }
