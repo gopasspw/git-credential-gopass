@@ -1,6 +1,6 @@
 module github.com/gopasspw/git-credential-gopass
 
-go 1.24
+go 1.24.1
 
 require (
 	github.com/blang/semver/v4 v4.0.0
