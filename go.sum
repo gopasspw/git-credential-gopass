@@ -31,6 +31,8 @@ github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkp
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
+github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=
+github.com/gobwas/glob v0.2.3/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
 github.com/godbus/dbus/v5 v5.1.0 h1:4KLkAxT3aOY8Li4FRJe/KvhoNFFxo0m6fNuFUO8QJUk=
 github.com/godbus/dbus/v5 v5.1.0/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/golang/mock v1.6.0 h1:ErTB+efbowRARo13NNdxyJji2egdxLGQhRaY+DUumQc=
@@ -42,10 +44,10 @@ github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 h1:El6M4kTTCOh6aBiKaU
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3pAXIBCelhxNneeOaAeabZDe5s4K6zSpQ=
 github.com/gopasspw/clipboard v0.0.3 h1:RYSU2bBcHClFkoie6lCsrxDtP/yzRpDr2zmePWxjkVs=
 github.com/gopasspw/clipboard v0.0.3/go.mod h1:i0cShr7JEbOXZ/iKM5RyfBLbu1FPzouO8BTCJy0uHy8=
-github.com/gopasspw/gitconfig v0.0.3-0.20250819161336-9ff4f059ac1d h1:ULDMvON9pUIRelCfpn4fujlndn1eUmrLYiMsUpuu6LI=
-github.com/gopasspw/gitconfig v0.0.3-0.20250819161336-9ff4f059ac1d/go.mod h1:QXipMxku0UNLRXdNHskPQ8zsnnT0ZL9+XrNJPCMHuGY=
-github.com/gopasspw/gopass v1.15.17 h1:ujxz+zlRHy5FmQ1IwJfV1eq0DNWw+fYwzBzf0YQqcO8=
-github.com/gopasspw/gopass v1.15.17/go.mod h1:mwQtcU46W6/50MBV3gFVPTi5Db/0ONUhVk7Vv9/oQRQ=
+github.com/gopasspw/gitconfig v0.0.3 h1:uJn9y5jUabHtX09p5C3UeNcAQm27MkHDHEDn4XaNacY=
+github.com/gopasspw/gitconfig v0.0.3/go.mod h1:qWxSOCbeGpetrXC5kGftIxSm0Au/5NHnK6HUtCWeyDQ=
+github.com/gopasspw/gopass v1.15.18 h1:4yXe414+IdLwDw6F80WO2599G/+A149sl4cwK12gLjE=
+github.com/gopasspw/gopass v1.15.18/go.mod h1:V3aHGSqBJPglrnXBmxCKa/gCgpR5vfOXEWaZ2t5dINc=
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
 github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
