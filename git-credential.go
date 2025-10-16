@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/gopasspw/gopass/pkg/ctxutil"
@@ -170,12 +171,26 @@ func filter(ls []string, prefix string) []string {
 }
 
 func composePath(c *cli.Context, cred *gitCredentials) string {
-	store := c.String("store") + "/"
-	if store == "/" {
-		store = ""
+	var gopassPath string
+
+	if c.String("store") != "" {
+		gopassPath = path.Join(c.String("store"))
 	}
 
-	return store + "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
+	gopassPath = path.Join(gopassPath, "git", fsutil.CleanFilename(cred.Host))
+
+	// If path is supplied due to useHttpPath being set,
+	// assume the first part of the path is a user or organization.
+	if cred.Path != "" {
+		parts := strings.Split(cred.Path, string(os.PathSeparator))
+		if len(parts) > 0 {
+			gopassPath = path.Join(gopassPath, parts[0])
+		}
+	}
+
+	gopassPath = path.Join(gopassPath, fsutil.CleanFilename(cred.Username))
+
+	return gopassPath
 }
 
 // Get returns a credential to git.
