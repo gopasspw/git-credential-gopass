@@ -224,6 +224,102 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 	assert.Empty(t, stdout.String())
 }
 
+func Test_composePath(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		ctx  *cli.Context
+		cred *gitCredentials
+		want string
+	}{
+		{
+			name: "basic path with host and username",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{}),
+			cred: &gitCredentials{
+				Host:     "github.com",
+				Username: "alice",
+			},
+			want: "git/github.com/alice",
+		},
+		{
+			name: "path with store flag",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"store": "mystore"}),
+			cred: &gitCredentials{
+				Host:     "gitlab.com",
+				Username: "bob",
+			},
+			want: "mystore/git/gitlab.com/bob",
+		},
+		{
+			name: "path with useHttpPath - single part",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{}),
+			cred: &gitCredentials{
+				Host:     "github.com",
+				Path:     "myorg",
+				Username: "charlie",
+			},
+			want: "git/github.com/myorg/charlie",
+		},
+		{
+			name: "path with useHttpPath - multiple parts",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{}),
+			cred: &gitCredentials{
+				Host:     "github.com",
+				Path:     "myorg/myrepo",
+				Username: "dave",
+			},
+			want: "git/github.com/myorg/dave",
+		},
+		{
+			name: "path with store and useHttpPath",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"store": "work"}),
+			cred: &gitCredentials{
+				Host:     "bitbucket.org",
+				Path:     "company/project",
+				Username: "eve",
+			},
+			want: "work/git/bitbucket.org/company/eve",
+		},
+		{
+			name: "empty username",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{}),
+			cred: &gitCredentials{
+				Host:     "example.com",
+				Username: "",
+			},
+			want: "git/example.com",
+		},
+		{
+			name: "host with special characters gets cleaned",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{}),
+			cred: &gitCredentials{
+				Host:     "my:host.com",
+				Username: "user",
+			},
+			want: "git/my_host.com/user",
+		},
+		{
+			name: "username with special characters",
+			ctx:  gptest.CliCtxWithFlags(t.Context(), t, map[string]string{}),
+			cred: &gitCredentials{
+				Host:     "github.com",
+				Username: "user@email.com",
+			},
+			want: "git/github.com/user@email.com",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := composePath(tt.ctx, tt.cred)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_getOptions(t *testing.T) {
 	t.Parallel()
 
