@@ -175,7 +175,13 @@ func composePath(c *cli.Context, cred *gitCredentials) string {
 		store = ""
 	}
 
-	return store + "git/" + fsutil.CleanFilename(cred.Host) + "/" + fsutil.CleanFilename(cred.Username)
+	path := store + "git/" + fsutil.CleanFilename(cred.Host)
+	if cred.Path != "" {
+		path += "/" + fsutil.CleanFilename(cred.Path)
+	}
+	path += "/" + fsutil.CleanFilename(cred.Username)
+
+	return path
 }
 
 // Get returns a credential to git.
