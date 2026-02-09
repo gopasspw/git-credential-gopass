@@ -548,3 +548,116 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 	require.NoError(t, err)
 	assert.Equal(t, "token2", read.Password)
 }
+
+// TestIssue19_CredentialsInClonedRepo tests that credentials do not leak into the cloned repository.
+// This is a regression test for https://github.com/gopasspw/git-credential-gopass/issues/19
+// where credentials stored by git-credential-gopass would appear inside the cloned repository's
+// working directory, which is a security issue.
+func TestIssue19_CredentialsInClonedRepo(t *testing.T) {
+	if !fsutil.IsFile("git-credential-gopass") || runtime.GOOS == "windows" {
+		t.Skip("Skipping integration test, git-credential-gopass binary not found. Use make test to run unit tests.")
+	}
+
+	ctx := t.Context()
+
+	// Create a temporary directory for the test
+	td := t.TempDir()
+
+	// Create a bin directory for the test
+	binDir := filepath.Join(td, "bin")
+	require.NoError(t, os.MkdirAll(binDir, 0o700))
+
+	// Copy the credential helper binary to the bin directory
+	require.NoError(t, fsutil.CopyFile("git-credential-gopass", filepath.Join(binDir, "git-credential-gopass")))
+
+	// Create a password store in an isolated location
+	gp := gptest.NewUnitTester(t)
+	require.NoError(t, gp.InitStore(""))
+
+	// Create a bare Git repository (remote)
+	gitRemoteDir := filepath.Join(td, "remote.git")
+	gitutils.InitGitBare(t, gitRemoteDir)
+
+	// Start the HTTP server with Basic Auth
+	srv := httptest.NewServer(githttp.BasicAuthMiddleware(githttp.GitHandler(td), "testuser", "testpass"))
+	defer srv.Close()
+
+	remoteURL := srv.URL + "/remote.git"
+
+	// Create a directory for cloning
+	cloneDir := filepath.Join(td, "cloned-repo")
+
+	// Set up environment with the helper binary in PATH and gopass home directory
+	env := prependPath(t, os.Environ(), binDir)
+	// The gptest.NewUnitTester should already set GOPASS_HOMEDIR, but let's be explicit
+	env = append(env, "GOPASS_HOMEDIR="+gp.Dir)
+
+	// Configure git to use our credential helper and disable interactive mode
+	// We'll do this in the clone command itself to avoid needing a pre-existing repo
+	cloneCmd := exec.CommandContext(ctx, "git", "clone", remoteURL, cloneDir)
+	cloneCmd.Env = env
+	// Set global config for this test (will be isolated by HOME/XDG_CONFIG_HOME in env)
+	configCmd := exec.CommandContext(ctx, "git", "config", "--global", "credential.helper", "gopass")
+	configCmd.Env = env
+	require.NoError(t, configCmd.Run(), "failed to configure credential helper")
+
+	configCmd = exec.CommandContext(ctx, "git", "config", "--global", "credential.interactive", "false")
+	configCmd.Env = env
+	require.NoError(t, configCmd.Run(), "failed to disable interactive credentials")
+
+	// Attempt to clone - this will fail because we don't have credentials yet,
+	// but git-credential-gopass will be invoked and will fail to find credentials
+	err := cloneCmd.Run()
+	require.Error(t, err, "clone should fail without credentials")
+
+	// Now store credentials in the gopass store
+	// The URL is like http://127.0.0.1:12345 and we need to extract the host
+	urlParts := strings.TrimPrefix(srv.URL, "http://")
+	hostPort := strings.ReplaceAll(urlParts, ":", "_")
+
+	// Store credential in gopass format: git/<host>/username
+	credPath := filepath.Join(gp.StoreDir(""), "git", hostPort, "testuser.txt")
+	require.NoError(t, os.MkdirAll(filepath.Dir(credPath), 0o700))
+	require.NoError(t, os.WriteFile(credPath, []byte("testpass\nlogin: testuser\n"), 0o600))
+
+	// Now clone again - should succeed with credentials
+	cloneCmd = exec.CommandContext(ctx, "git", "clone", remoteURL, cloneDir)
+	cloneCmd.Env = env
+	require.NoError(t, cloneCmd.Run(), "clone should succeed with credentials")
+
+	// This is the key check for issue #19:
+	// Verify that no credential files (.gpg or .txt) appear in the cloned repository
+	var credentialFilesInRepo []string
+	err = filepath.Walk(cloneDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir // Skip .git directory
+		}
+		if !info.IsDir() && (strings.HasSuffix(info.Name(), ".gpg") ||
+			(strings.HasSuffix(info.Name(), ".txt") && strings.Contains(path, "/git/"))) {
+			credentialFilesInRepo = append(credentialFilesInRepo, path)
+		}
+		return nil
+	})
+	require.NoError(t, err, "failed to walk cloned repository")
+
+	// Assert that no credential files leaked into the repository
+	assert.Empty(t, credentialFilesInRepo,
+		"Credential files should not appear in cloned repository (issue #19). Found: %v",
+		credentialFilesInRepo)
+
+	// Verify git status shows a clean working directory (no untracked files)
+	statusCmd := exec.CommandContext(ctx, "git", "-C", cloneDir, "status", "--porcelain")
+	statusCmd.Env = env
+	output, err := statusCmd.Output()
+	require.NoError(t, err, "git status should succeed")
+	assert.Empty(t, strings.TrimSpace(string(output)),
+		"Working directory should be clean with no untracked files. Got: %s", string(output))
+
+	// Verify credentials are actually stored in gopass (not in the repo)
+	require.FileExists(t, credPath, "Credentials should be stored in gopass store")
+	assert.NotContains(t, credPath, cloneDir,
+		"Credential path should not be inside the cloned repository")
+}
