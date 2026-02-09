@@ -371,3 +371,180 @@ func prependPath(t *testing.T, env []string, path string) []string {
 
 	return env
 }
+
+func Test_composePath(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		credentials *gitCredentials
+		store       string
+		expected    string
+	}{
+		{
+			name: "without repository path",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "alice",
+				Path:     "",
+			},
+			store:    "",
+			expected: "git/github.com/alice",
+		},
+		{
+			name: "with repository path",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "alice",
+				Path:     "repo1",
+			},
+			store:    "",
+			expected: "git/github.com/repo1/alice",
+		},
+		{
+			name: "with complex repository path",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "alice",
+				Path:     "user/myrepo.git",
+			},
+			store:    "",
+			expected: "git/github.com/user_myrepo.git/alice",
+		},
+		{
+			name: "with store prefix",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "bob",
+				Path:     "",
+			},
+			store:    "mystore",
+			expected: "mystore/git/github.com/bob",
+		},
+		{
+			name: "with store prefix and repository path",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "bob",
+				Path:     "repo2",
+			},
+			store:    "mystore",
+			expected: "mystore/git/github.com/repo2/bob",
+		},
+		{
+			name: "with special characters in host",
+			credentials: &gitCredentials{
+				Host:     "git.example.com",
+				Username: "charlie",
+				Path:     "",
+			},
+			store:    "",
+			expected: "git/git.example.com/charlie",
+		},
+		{
+			name: "multiple repos same host and user",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "alice",
+				Path:     "repo1",
+			},
+			store:    "",
+			expected: "git/github.com/repo1/alice",
+		},
+		{
+			name: "multiple repos same host and user alternate",
+			credentials: &gitCredentials{
+				Host:     "github.com",
+				Username: "alice",
+				Path:     "repo2",
+			},
+			store:    "",
+			expected: "git/github.com/repo2/alice",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			c := gptest.CliCtxWithFlags(t.Context(), t, map[string]string{
+				"store": tt.store,
+			})
+
+			got := composePath(c, tt.credentials)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
+func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:paralleltest
+	ctx := t.Context()
+	act := &gc{
+		gp: apimock.New(),
+	}
+
+	stdout := &bytes.Buffer{}
+	Stdout = stdout
+	color.NoColor = true
+	defer func() {
+		Stdout = os.Stdout
+		termio.Stdin = os.Stdin
+	}()
+
+	c := gptest.CliCtx(ctx, t)
+	ctx = ctxutil.WithStdin(ctx, true)
+	c.Context = ctx
+
+	// Store first credential for myrepo
+	s1 := "protocol=https\n" +
+		"host=github.com\n" +
+		"username=alice\n" +
+		"path=repo1\n"
+
+	termio.Stdin = strings.NewReader(s1 + "password=token1\n")
+	require.NoError(t, act.Store(c))
+	stdout.Reset()
+
+	// Store second credential for myrepo-other (same user, same host, different path)
+	s2 := "protocol=https\n" +
+		"host=github.com\n" +
+		"username=alice\n" +
+		"path=repo2\n"
+
+	termio.Stdin = strings.NewReader(s2 + "password=token2\n")
+	require.NoError(t, act.Store(c))
+	stdout.Reset()
+
+	// Retrieve first credential
+	termio.Stdin = strings.NewReader(s1)
+	require.NoError(t, act.Get(c))
+	read, err := parseGitCredentials(stdout)
+	require.NoError(t, err)
+	assert.Equal(t, "token1", read.Password)
+	stdout.Reset()
+
+	// Retrieve second credential - should get different token
+	termio.Stdin = strings.NewReader(s2)
+	require.NoError(t, act.Get(c))
+	read, err = parseGitCredentials(stdout)
+	require.NoError(t, err)
+	assert.Equal(t, "token2", read.Password)
+	stdout.Reset()
+
+	// Erase first credential
+	termio.Stdin = strings.NewReader(s1)
+	require.NoError(t, act.Erase(c))
+	stdout.Reset()
+
+	// Try to retrieve first credential - should fail
+	termio.Stdin = strings.NewReader(s1)
+	require.NoError(t, act.Get(c))
+	assert.Empty(t, stdout.String())
+
+	// But second credential should still be available
+	termio.Stdin = strings.NewReader(s2)
+	require.NoError(t, act.Get(c))
+	read, err = parseGitCredentials(stdout)
+	require.NoError(t, err)
+	assert.Equal(t, "token2", read.Password)
+}
