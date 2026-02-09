@@ -639,6 +639,7 @@ func TestIssue19_CredentialsInClonedRepo(t *testing.T) {
 			(strings.HasSuffix(info.Name(), ".txt") && strings.Contains(path, "/git/"))) {
 			credentialFilesInRepo = append(credentialFilesInRepo, path)
 		}
+
 		return nil
 	})
 	require.NoError(t, err, "failed to walk cloned repository")
