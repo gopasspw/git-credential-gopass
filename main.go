@@ -9,7 +9,7 @@ import (
 
 	"github.com/gopasspw/gopass/pkg/ctxutil"
 	"github.com/gopasspw/gopass/pkg/gopass/api"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 const (
@@ -54,73 +54,73 @@ func main() {
 		gp: gp,
 	}
 
-	app := cli.NewApp()
-	app.Name = name
-	app.Version = getVersion().String()
-	app.Usage = `Use "gopass" as git's credential.helper`
-	app.Description = "" +
-		"This command allows you to cache your git-credentials with gopass." +
-		"Activate by using `git config --global credential.helper gopass`"
-	app.EnableBashCompletion = true
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:  "store",
-			Usage: "First part of path to find the secret.",
+	app := &cli.Command{
+		Name:    name,
+		Version: getVersion().String(),
+		Usage:   `Use "gopass" as git's credential.helper`,
+		Description: "This command allows you to cache your git-credentials with gopass." +
+			"Activate by using `git config --global credential.helper gopass`",
+		EnableShellCompletion: true,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "store",
+				Usage: "First part of path to find the secret.",
+			},
 		},
-	}
-	app.Commands = []*cli.Command{
-		{
-			Name:   "get",
-			Hidden: true,
-			Action: gc.Get,
-			Before: gc.Before,
-		},
-		{
-			Name:   "store",
-			Hidden: true,
-			Action: gc.Store,
-			Before: gc.Before,
-		},
-		{
-			Name:   "erase",
-			Hidden: true,
-			Action: gc.Erase,
-			Before: gc.Before,
-		},
-		{
-			Name:        "configure",
-			Description: "This command configures git-credential-gopass as git's credential.helper",
-			Action:      gc.Configure,
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:  "global",
-					Usage: "Install for current user",
+		Commands: []*cli.Command{
+			{
+				Name:   "get",
+				Hidden: true,
+				Action: gc.Get,
+				Before: gc.Before,
+			},
+			{
+				Name:   "store",
+				Hidden: true,
+				Action: gc.Store,
+				Before: gc.Before,
+			},
+			{
+				Name:   "erase",
+				Hidden: true,
+				Action: gc.Erase,
+				Before: gc.Before,
+			},
+			{
+				Name:        "configure",
+				Description: "This command configures git-credential-gopass as git's credential.helper",
+				Action:      gc.Configure,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "global",
+						Usage: "Install for current user",
+					},
+					&cli.BoolFlag{
+						Name:  "local",
+						Usage: "Install for current repository only",
+					},
+					&cli.BoolFlag{
+						Name:  "system",
+						Usage: "Install for all users, requires superuser rights",
+					},
+					&cli.StringFlag{
+						Name:  "store",
+						Usage: "First part of path to find the secret.",
+					},
 				},
-				&cli.BoolFlag{
-					Name:  "local",
-					Usage: "Install for current repository only",
-				},
-				&cli.BoolFlag{
-					Name:  "system",
-					Usage: "Install for all users, requires superuser rights",
-				},
-				&cli.StringFlag{
-					Name:  "store",
-					Usage: "First part of path to find the secret.",
+			},
+			{
+				Name: "version",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					cli.VersionPrinter(cmd)
+
+					return nil
 				},
 			},
 		},
-		{
-			Name: "version",
-			Action: func(c *cli.Context) error {
-				cli.VersionPrinter(c)
-
-				return nil
-			},
-		},
 	}
 
-	if err := app.RunContext(ctx, os.Args); err != nil {
+	if err := app.Run(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
 }

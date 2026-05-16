@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http/httptest"
 	"os"
@@ -21,8 +22,32 @@ import (
 	"github.com/gopasspw/gopass/tests/gptest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
+
+// testCmd creates a *cli.Command with the given flags set for use in tests.
+func testCmd(t *testing.T, ctx context.Context, flags map[string]string) *cli.Command {
+	t.Helper()
+
+	cmd := &cli.Command{
+		Flags: []cli.Flag{
+			&cli.StringFlag{Name: "store"},
+			&cli.BoolFlag{Name: "global"},
+			&cli.BoolFlag{Name: "local"},
+			&cli.BoolFlag{Name: "system"},
+		},
+		Action: func(context.Context, *cli.Command) error { return nil },
+	}
+
+	args := []string{"test"}
+	for k, v := range flags {
+		args = append(args, "--"+k+"="+v)
+	}
+
+	_ = cmd.Run(ctx, args)
+
+	return cmd
+}
 
 func TestGitCredentialFormat(t *testing.T) {
 	t.Parallel()
@@ -122,37 +147,38 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 		termio.Stdin = os.Stdin
 	}()
 
-	c := gptest.CliCtx(ctx, t)
+	cmd := testCmd(t, ctx, nil)
 
 	// before without stdin
-	require.Error(t, act.Before(c))
+	_, err := act.Before(ctx, cmd)
+	require.Error(t, err)
 
 	// before with stdin
 	ctx = ctxutil.WithStdin(ctx, true)
-	c.Context = ctx
-	require.NoError(t, act.Before(c))
+	_, err = act.Before(ctx, cmd)
+	require.NoError(t, err)
 
 	s := "protocol=https\n" +
 		"host=example.com\n" +
 		"username=bob\n"
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
-	require.NoError(t, act.Store(c))
+	require.NoError(t, act.Store(ctx, cmd))
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	read, err := parseGitCredentials(stdout)
 	require.NoError(t, err)
 	assert.Equal(t, "secr3=t", read.Password)
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader("host=example.com\n")
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	read, err = parseGitCredentials(stdout)
 	require.NoError(t, err)
 	assert.Equal(t, "secr3=t", read.Password)
@@ -160,19 +186,19 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Erase(c))
+	require.NoError(t, act.Erase(ctx, cmd))
 	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader("a")
-	require.Error(t, act.Get(c))
+	require.Error(t, act.Get(ctx, cmd))
 	termio.Stdin = strings.NewReader("a")
-	require.Error(t, act.Store(c))
+	require.Error(t, act.Store(ctx, cmd))
 	termio.Stdin = strings.NewReader("a")
-	require.Error(t, act.Erase(c))
+	require.Error(t, act.Erase(ctx, cmd))
 }
 
 func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
@@ -189,38 +215,37 @@ func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
 		termio.Stdin = os.Stdin
 	}()
 
-	c := gptest.CliCtxWithFlags(ctx, t, map[string]string{
+	cmd := testCmd(t, ctx, map[string]string{
 		"store": "teststore",
 	})
 
 	ctx = ctxutil.WithStdin(ctx, true)
-	c.Context = ctx
 
 	s := "protocol=https\n" +
 		"host=example.com\n" +
 		"username=bob\n"
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s + "password=secr3=t\n")
-	require.NoError(t, act.Store(c))
+	require.NoError(t, act.Store(ctx, cmd))
 	stdout.Reset()
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	read, err := parseGitCredentials(stdout)
 	require.NoError(t, err)
 	assert.Equal(t, "secr3=t", read.Password)
 	stdout.Reset()
 
-	c = gptest.CliCtxWithFlags(ctx, t, map[string]string{
+	cmd = testCmd(t, ctx, map[string]string{
 		"store": "otherstore",
 	})
 
 	termio.Stdin = strings.NewReader(s)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	assert.Empty(t, stdout.String())
 }
 
@@ -228,7 +253,7 @@ func Test_getOptions(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		c *cli.Context
+		cmd *cli.Command
 	}
 
 	tests := []struct {
@@ -239,31 +264,31 @@ func Test_getOptions(t *testing.T) {
 	}{
 		{
 			name:    "without any flag",
-			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{})},
+			args:    args{cmd: testCmd(t, t.Context(), map[string]string{})},
 			want:    []string{"config", "--global", "credential.helper", "gopass"},
 			wantErr: false,
 		},
 		{
 			name:    "with local scope flag",
-			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"local": "true"})},
+			args:    args{cmd: testCmd(t, t.Context(), map[string]string{"local": "true"})},
 			want:    []string{"config", "--local", "credential.helper", "gopass"},
 			wantErr: false,
 		},
 		{
 			name:    "with system scope flag",
-			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"system": "true"})},
+			args:    args{cmd: testCmd(t, t.Context(), map[string]string{"system": "true"})},
 			want:    []string{"config", "--system", "credential.helper", "gopass"},
 			wantErr: false,
 		},
 		{
 			name:    "with local scope flag and store",
-			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"local": "true", "store": "teststore"})},
+			args:    args{cmd: testCmd(t, t.Context(), map[string]string{"local": "true", "store": "teststore"})},
 			want:    []string{"config", "--local", "credential.helper", "gopass --store=teststore"},
 			wantErr: false,
 		},
 		{
 			name:    "error case with too many scope flags",
-			args:    args{c: gptest.CliCtxWithFlags(t.Context(), t, map[string]string{"local": "true", "system": "true"})},
+			args:    args{cmd: testCmd(t, t.Context(), map[string]string{"local": "true", "system": "true"})},
 			want:    []string{},
 			wantErr: true,
 		},
@@ -273,7 +298,7 @@ func Test_getOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := getOptions(tt.args.c)
+			got, err := getOptions(tt.args.cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getOptions() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -467,11 +492,11 @@ func Test_composePath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := gptest.CliCtxWithFlags(t.Context(), t, map[string]string{
+			cmd := testCmd(t, t.Context(), map[string]string{
 				"store": tt.store,
 			})
 
-			got := composePath(c, tt.credentials)
+			got := composePath(cmd, tt.credentials)
 			assert.Equal(t, tt.expected, got)
 		})
 	}
@@ -491,9 +516,8 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 		termio.Stdin = os.Stdin
 	}()
 
-	c := gptest.CliCtx(ctx, t)
+	cmd := testCmd(t, ctx, nil)
 	ctx = ctxutil.WithStdin(ctx, true)
-	c.Context = ctx
 
 	// Store first credential for myrepo
 	s1 := "protocol=https\n" +
@@ -502,7 +526,7 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 		"path=repo1\n"
 
 	termio.Stdin = strings.NewReader(s1 + "password=token1\n")
-	require.NoError(t, act.Store(c))
+	require.NoError(t, act.Store(ctx, cmd))
 	stdout.Reset()
 
 	// Store second credential for myrepo-other (same user, same host, different path)
@@ -512,12 +536,12 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 		"path=repo2\n"
 
 	termio.Stdin = strings.NewReader(s2 + "password=token2\n")
-	require.NoError(t, act.Store(c))
+	require.NoError(t, act.Store(ctx, cmd))
 	stdout.Reset()
 
 	// Retrieve first credential
 	termio.Stdin = strings.NewReader(s1)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	read, err := parseGitCredentials(stdout)
 	require.NoError(t, err)
 	assert.Equal(t, "token1", read.Password)
@@ -525,7 +549,7 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 
 	// Retrieve second credential - should get different token
 	termio.Stdin = strings.NewReader(s2)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	read, err = parseGitCredentials(stdout)
 	require.NoError(t, err)
 	assert.Equal(t, "token2", read.Password)
@@ -533,17 +557,17 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 
 	// Erase first credential
 	termio.Stdin = strings.NewReader(s1)
-	require.NoError(t, act.Erase(c))
+	require.NoError(t, act.Erase(ctx, cmd))
 	stdout.Reset()
 
 	// Try to retrieve first credential - should fail
 	termio.Stdin = strings.NewReader(s1)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	assert.Empty(t, stdout.String())
 
 	// But second credential should still be available
 	termio.Stdin = strings.NewReader(s2)
-	require.NoError(t, act.Get(c))
+	require.NoError(t, act.Get(ctx, cmd))
 	read, err = parseGitCredentials(stdout)
 	require.NoError(t, err)
 	assert.Equal(t, "token2", read.Password)
