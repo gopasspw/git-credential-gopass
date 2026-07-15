@@ -64,7 +64,11 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "store",
-				Usage: "First part of path to find the secret.",
+				Usage: "First part of path to find the secret",
+			},
+			&cli.BoolFlag{
+				Name:  "erase",
+				Usage: "Erase the secret when git requests",
 			},
 		},
 		Commands: []*cli.Command{
