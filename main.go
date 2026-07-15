@@ -64,7 +64,11 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "store",
-				Usage: "First part of path to find the secret.",
+				Usage: "First part of path to find the secret",
+			},
+			&cli.BoolFlag{
+				Name:  "no-erase",
+				Usage: "Never erase the secret",
 			},
 		},
 		Commands: []*cli.Command{
