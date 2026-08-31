@@ -39,7 +39,8 @@ func testCmd(t *testing.T, ctx context.Context, flags map[string]string) *cli.Co
 		Action: func(context.Context, *cli.Command) error { return nil },
 	}
 
-	args := []string{"test"}
+	args := make([]string, 0, len(flags)+1)
+	args = append(args, "test")
 	for k, v := range flags {
 		args = append(args, "--"+k+"="+v)
 	}

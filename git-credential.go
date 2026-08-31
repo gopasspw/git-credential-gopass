@@ -304,7 +304,7 @@ func (s *gc) Configure(ctx context.Context, cmd *cli.Command) error {
 }
 
 func getOptions(cmd *cli.Command) ([]string, error) {
-	options := []string{}
+	options := make([]string, 0, 4)
 	flags := 0
 	flag := "--global"
 	if cmd.Bool("local") {
