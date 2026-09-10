@@ -1,3 +1,7 @@
+## 1.17.2
+
+- Bump dependencies to gopass release v1.17.2
+
 ## 1.17.0
 
 - Bump dependencies to gopass release v1.17.0
