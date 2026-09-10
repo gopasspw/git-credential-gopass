@@ -65,6 +65,27 @@ git-credential-gopass configure --local --store=ci-team
 
 This puts the value in front of the Gopass search path.
 
+#### Option --erase
+
+By default this helper never deletes your secrets. Git asks a credential helper to `erase` a credential
+whenever authentication with it failed, e.g. because a token expired or was revoked. Since a temporarily
+failing server, a wrong URL or a mistyped one-time password would otherwise silently wipe your secret,
+`git-credential-gopass` ignores those `erase` requests unless you opt in:
+
+```bash
+git config credential.helper "gopass --erase"
+```
+
+With `--erase` the secret is removed from the store as soon as git reports it as invalid, so you will be
+asked for new credentials on the next operation.
+
+To delete a secret manually, use gopass directly:
+
+```bash
+gopass rm git/github.com/username          # per host and user
+gopass rm git/github.com/myrepo/username   # per host, repository and user
+```
+
 #### Using with SMTP
 
 If you want to use this with [`git-send-email`](https://git-scm.com/docs/git-send-email) you'll need to:

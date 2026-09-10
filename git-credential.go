@@ -277,14 +277,16 @@ func (s *gc) Store(ctx context.Context, cmd *cli.Command) error {
 
 // Erase removes a credential got from git.
 func (s *gc) Erase(ctx context.Context, cmd *cli.Command) error {
-	cred, err := parseGitCredentials(termio.Stdin)
-	if err != nil {
-		return fmt.Errorf("error: %w while parsing git-credential", err)
-	}
+	if cmd.Bool("erase") {
+		cred, err := parseGitCredentials(termio.Stdin)
+		if err != nil {
+			return fmt.Errorf("error: %w while parsing git-credential", err)
+		}
 
-	path := composePath(cmd, cred)
-	if err := s.gp.Remove(ctx, path); err != nil {
-		fmt.Fprintln(os.Stderr, "gopass error: error while writing to store")
+		path := composePath(cmd, cred)
+		if err := s.gp.Remove(ctx, path); err != nil {
+			fmt.Fprintln(os.Stderr, "gopass error: error while writing to store")
+		}
 	}
 
 	return nil

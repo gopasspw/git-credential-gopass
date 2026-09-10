@@ -35,6 +35,7 @@ func testCmd(t *testing.T, ctx context.Context, flags map[string]string) *cli.Co
 			&cli.BoolFlag{Name: "global"},
 			&cli.BoolFlag{Name: "local"},
 			&cli.BoolFlag{Name: "system"},
+			&cli.BoolFlag{Name: "erase"},
 		},
 		Action: func(context.Context, *cli.Command) error { return nil },
 	}
@@ -186,8 +187,29 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 	assert.Equal(t, "bob", read.Username)
 	stdout.Reset()
 
+	// Erasing is a no-op unless the --erase flag is given, so the secret must still be there.
 	termio.Stdin = strings.NewReader(s)
 	require.NoError(t, act.Erase(ctx, cmd))
+	assert.Empty(t, stdout.String())
+
+	termio.Stdin = strings.NewReader(s)
+	require.NoError(t, act.Get(ctx, cmd))
+	read, err = parseGitCredentials(stdout)
+	require.NoError(t, err)
+	assert.Equal(t, "secr3=t", read.Password)
+	stdout.Reset()
+
+	// Invalid input is not even parsed without the --erase flag.
+	termio.Stdin = strings.NewReader("a")
+	require.NoError(t, act.Erase(ctx, cmd))
+
+	eraseCmd := testCmd(t, ctx, map[string]string{"erase": "true"})
+
+	termio.Stdin = strings.NewReader("a")
+	require.Error(t, act.Erase(ctx, eraseCmd))
+
+	termio.Stdin = strings.NewReader(s)
+	require.NoError(t, act.Erase(ctx, eraseCmd))
 	assert.Empty(t, stdout.String())
 
 	termio.Stdin = strings.NewReader(s)
@@ -198,8 +220,6 @@ func TestGitCredentialHelper(t *testing.T) { //nolint:paralleltest
 	require.Error(t, act.Get(ctx, cmd))
 	termio.Stdin = strings.NewReader("a")
 	require.Error(t, act.Store(ctx, cmd))
-	termio.Stdin = strings.NewReader("a")
-	require.Error(t, act.Erase(ctx, cmd))
 }
 
 func TestGitCredentialHelperWithStoreFlag(t *testing.T) { //nolint:paralleltest
@@ -556,9 +576,30 @@ func TestGitCredentialHelperMultipleCredentialsPerUser(t *testing.T) { //nolint:
 	assert.Equal(t, "token2", read.Password)
 	stdout.Reset()
 
-	// Erase first credential
+	// Erasing is a no-op by default, both credentials must still be available
 	termio.Stdin = strings.NewReader(s1)
 	require.NoError(t, act.Erase(ctx, cmd))
+	termio.Stdin = strings.NewReader(s2)
+	require.NoError(t, act.Erase(ctx, cmd))
+
+	termio.Stdin = strings.NewReader(s1)
+	require.NoError(t, act.Get(ctx, cmd))
+	read, err = parseGitCredentials(stdout)
+	require.NoError(t, err)
+	assert.Equal(t, "token1", read.Password)
+	stdout.Reset()
+
+	termio.Stdin = strings.NewReader(s2)
+	require.NoError(t, act.Get(ctx, cmd))
+	read, err = parseGitCredentials(stdout)
+	require.NoError(t, err)
+	assert.Equal(t, "token2", read.Password)
+	stdout.Reset()
+
+	// Erase first credential, only works with the --erase flag
+	eraseCmd := testCmd(t, ctx, map[string]string{"erase": "true"})
+	termio.Stdin = strings.NewReader(s1)
+	require.NoError(t, act.Erase(ctx, eraseCmd))
 	stdout.Reset()
 
 	// Try to retrieve first credential - should fail
