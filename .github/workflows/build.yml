@@ -2,20 +2,29 @@ name: Build git-credential-gopass
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   linux:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.26', '1.27']
+    name: Go ${{ matrix.go }}
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
       with:
         egress-policy: block
         allowed-endpoints: >
@@ -23,6 +32,7 @@ jobs:
           objects.githubusercontent.com:443
           proxy.golang.org:443
           raw.githubusercontent.com:443
+          release-assets.githubusercontent.com:443
           storage.googleapis.com:443
           sum.golang.org:443
           golang.org:443
@@ -33,16 +43,19 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
+
     - name: Set up Go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
-        go-version-file: 'go.mod'
+        go-version: ${{ matrix.go }}
+  
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
+  
     - name: Ubuntu Dependencies
       run: sudo apt-get install --yes git gnupg
     - run: git config --global user.name nobody
@@ -57,10 +70,39 @@ jobs:
         echo ${GITHUB_WORKSPACE}
         echo ${GOPATH}
         echo ${GOROOT}
-        env
-      
+        env  
+
     - name: Build and Unit Test
       run: make gha-linux
+    - name: Integration Test
+      run: make test-integration
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          IMAGE_NAME: ${{ github.repository }}
+        with:
+          images: ${{ env.IMAGE_NAME }}
+
+      - name: Build container image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   windows:
     runs-on: windows-latest
@@ -69,7 +111,7 @@ jobs:
           shell: msys2 {0}
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
       with:
         egress-policy: audit
 
@@ -100,7 +142,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
       with:
         egress-policy: audit
 
@@ -112,9 +154,6 @@ jobs:
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: 'go.mod'
-
-    - name: MacOS Dependencies
-      run: brew install git gnupg
 
     - run: git config --global user.name nobody
     - run: git config --global user.email foo.bar@example.org
@@ -133,7 +172,7 @@ jobs:
     if: ${{ github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'}}
     steps:
       - id: metadata
-        uses: dependabot/fetch-metadata@v3
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       - run: |

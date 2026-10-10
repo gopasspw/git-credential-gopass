@@ -2,9 +2,15 @@ name: golangci-lint
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -16,31 +22,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           disable-sudo: true
           egress-policy: block
           allowed-endpoints: >
+            api.github.com:443
             github.com:443
+            golangci-lint.run:443
             objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
             proxy.golang.org:443
             raw.githubusercontent.com:443
             storage.googleapis.com:443
             sum.golang.org:443
-            golang.org:443
-            go.dev:443
-            azure.archive.ubuntu.com:443
-            archive.ubuntu.com:443
-            security.ubuntu.com:443
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
-          version: v2.1.1 # we have a list of linters in our .golangci.yml config file
+          # Note: there are 2 different version of golangci-lint used inside the project.
+          # https://github.com/gopasspw/gopass/blob/master/.github/workflows/golangci-lint.yml#L53
+          # https://github.com/gopasspw/gopass/blob/master/Makefile#L137
+          version: v2.13.1 # we have a list of linters in our .golangci.yml config file
           only-new-issues: true
