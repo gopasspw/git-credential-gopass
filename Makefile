@@ -26,8 +26,8 @@ OK := $(shell tput setaf 6; echo ' [OK]'; tput sgr0;)
 all: build
 build: $(GOPASS_OUTPUT)
 gha-linux: sysinfo crosscompile build test
-gha-osx: build test
-gha-windows: build test
+gha-osx: sysinfo build test
+gha-windows: sysinfo build test-win
 
 sysinfo:
 	@echo ">> SYSTEM INFORMATION"
@@ -84,6 +84,15 @@ test: $(GOPASS_OUTPUT)
 	    echo -n "     ";\
 		$(GO) test -test.short -run '(Test|Example)' $(BUILDFLAGS) $(TESTFLAGS) $(pkg) || exit 1;)
 
+test-win: $(GOPASS_OUTPUT)
+	@echo ">> TEST (Windows), \"fast-mode\": race detector off"
+	@$(foreach pkg, $(PKGSWIN),\
+	    echo -n "     ";\
+		$(GO) test -test.short -run '(Test|Example)' $(BUILDFLAGS) $(TESTFLAGS) $(pkg) || exit 1;)
+
+test-integration:
+	@echo ">> INTEGRATION TESTS: none"
+
 crosscompile:
 	@echo -n ">> CROSSCOMPILE linux/amd64"
 	@GOOS=linux GOARCH=amd64 $(GO) build -o $(GOPASS_OUTPUT)-linux-amd64
@@ -122,4 +131,4 @@ upgrade: gen fmt
 	@$(GO) get -u ./...
 	@$(GO) mod tidy
 
-.PHONY: clean build completion install sysinfo crosscompile test codequality release goreleaser debsign
+.PHONY: clean build completion install sysinfo crosscompile test test-win test-integration gha-linux gha-osx gha-windows codequality release goreleaser debsign
