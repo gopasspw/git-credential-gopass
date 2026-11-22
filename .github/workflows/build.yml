@@ -1,3 +1,8 @@
+# NOTE: This workflow is synced verbatim to gopass integration repositories by
+# helpers/postrel (only the top-level `name:` line is rewritten).
+# Keep gopass-specific jobs (such as container builds) in separate workflow
+# files, and ensure every Makefile target invoked here (gha-linux,
+# test-integration, gha-windows, gha-osx) exists in all integration repos.
 name: Build git-credential-gopass
 
 on:
