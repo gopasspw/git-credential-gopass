@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/gopasspw/gopass v1.17.4
 	github.com/stretchr/testify v1.12.1
-	github.com/urfave/cli/v3 v3.13.0
+	github.com/urfave/cli/v3 v3.14.0
 )
 
 require (
